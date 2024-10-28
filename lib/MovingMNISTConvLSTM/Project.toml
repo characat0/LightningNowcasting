@@ -2,8 +2,10 @@ name = "MovingMNISTConvLSTM"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 ConvLSTM = "cc441fe5-8cc4-4841-90c4-26eb7180d202"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+GZip = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
