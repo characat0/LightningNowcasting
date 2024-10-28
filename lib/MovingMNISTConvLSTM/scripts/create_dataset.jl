@@ -3,15 +3,12 @@ using DrWatson
 
 include(srcdir("dataset_utils.jl"))
 
-using GZip, CodecZlib
+using GZip, CodecZlib, Random, JLD2
 
 const MNIST_URL = "https://storage.googleapis.com/cvdf-datasets/mnist/"
 const MNIST_TRAIN_DATA_FILENAME = "train-images-idx3-ubyte.gz"
 const TRAIN_EXAMPLES = 60_000
 const MNIST_IMAGE_SIZE = 28
-
-
-
 
 function take_step!(v, pos)
     v_x, v_y = v
@@ -53,7 +50,7 @@ function sequence_in_grid!(grid, img, xs, ys)
     grid
 end
 
-function create_dataset(rng, grid_size, steps, samples, images=images, n_images=2)
+function create_dataset(rng, grid_size, steps, samples, images, n_images=2)
     grid = zeros(UInt8, grid_size, grid_size, steps, samples)
     for i in 1:samples
         for _ in 1:n_images
@@ -74,3 +71,8 @@ const images = GZip.open(mnist_images, "rb") do io
     permutedims(matrices, (2, 1, 3)) # Flip image
 end # Widht Height N-samples
 
+rng = Xoshiro(42)
+
+dataset = create_dataset(rng, 64, 20, 10_000, images, 2)
+
+@save datadir("exp_pro", "train.jld2") dataset
