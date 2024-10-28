@@ -18,11 +18,11 @@ function take_step!(v, pos)
 
     # Bounce in x
     x, v_x = ifelse(x <= 0, (zero(x), -v_x), (x, v_x))
-    x, v_x = ifelse(x >= 1, (one(x), -v_x),  (x, v_x))
+    x, v_x = ifelse(x >= 1, ( one(x), -v_x), (x, v_x))
 
     # Bounce in y
     y, v_y = ifelse(y <= 0, (zero(y), -v_y), (y, v_y))
-    y, v_y = ifelse(y >= 1, (one(y), -v_y),  (y, v_y))
+    y, v_y = ifelse(y >= 1, ( one(y), -v_y), (y, v_y))
     (v_x, v_y), (x, y)
 end
 
