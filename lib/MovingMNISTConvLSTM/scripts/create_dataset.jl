@@ -51,17 +51,13 @@ function sequence_in_grid!(grid, img, xs, ys)
 end
 
 function crop_number(img)
-    x = maximum(img, dims=2)
-    i_s = findfirst(>(0), x[:])
-    i_s = ifelse(isnothing(i_s), 1, i_s)
-    i_e = findlast(>(0), x[:])
-    i_e = ifelse(isnothing(i_e), size(img, 1), i_e)
+    x = maximum(img, dims=2)[:]
+    i_s = something(findfirst(>(0), x), 1)
+    i_e = something(findlast(>(0), x), size(img, 1))
 
-    y = maximum(img, dims=1)
-    j_s = findfirst(>(0), y[:])
-    j_s = ifelse(isnothing(j_s), 1, j_s)
-    j_e = findlast(>(0), y[:])
-    j_e = ifelse(isnothing(j_e), size(img, 2), j_e)
+    y = maximum(img, dims=1)[:]
+    j_s = something(findfirst(>(0), y), 1)
+    j_e = something(findlast(>(0), y[:]), size(img, 2))
 
     return @view img[i_s:i_e, j_s:j_e]
 end
