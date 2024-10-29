@@ -50,11 +50,28 @@ function sequence_in_grid!(grid, img, xs, ys)
     grid
 end
 
+function crop_number(img)
+    x = maximum(img, dims=2)
+    i_s = findfirst(>(0), x[:])
+    i_s = ifelse(isnothing(i_s), 1, i_s)
+    i_e = findlast(>(0), x[:])
+    i_e = ifelse(isnothing(i_e), size(img, 1), i_e)
+
+    y = maximum(img, dims=1)
+    j_s = findfirst(>(0), y[:])
+    j_s = ifelse(isnothing(j_s), 1, j_s)
+    j_e = findlast(>(0), y[:])
+    j_e = ifelse(isnothing(j_e), size(img, 2), j_e)
+
+    return @view img[i_s:i_e, j_s:j_e]
+end
+
 function create_dataset(rng, grid_size, steps, samples, images, n_images=2)
     grid = zeros(UInt8, grid_size, grid_size, steps, samples)
     for i in 1:samples
         for _ in 1:n_images
             img = images[:, :, rand(rng, 1:TRAIN_EXAMPLES)]
+            img = crop_number(img)
             x, y = get_random_trajectory(rng, steps)
             sequence_in_grid!(view(grid, :, :, :, i), img, x, y)
         end
