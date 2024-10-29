@@ -88,4 +88,23 @@ rng = Xoshiro(42)
 
 dataset = create_dataset(rng, 64, 20, 10_000, images, 2)
 
-@save datadir("exp_pro", "train.jld2") dataset
+@save datadir("exp_pro", "train.jld2") {compress=true} dataset
+
+rng = Xoshiro(42)
+
+dataset = create_dataset(rng, 64, 20, 30_000, images, 2)
+
+@save datadir("exp_pro", "big_train.jld2") {compress=true} dataset
+
+rng = Xoshiro(42 + 22)
+
+dataset = create_dataset(rng, 64, 20, 1_000, images, 2)
+
+@save datadir("exp_pro", "val.jld2") dataset
+
+rng = Xoshiro(42 + 22)
+
+dataset = create_dataset(rng, 64, 20, 1_000, images, 3)
+
+@save datadir("exp_pro", "ood_val.jld2") dataset
+
