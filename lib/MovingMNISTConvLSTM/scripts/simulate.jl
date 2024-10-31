@@ -3,26 +3,30 @@ using DrWatson
 
 # using Lux, Random, Optimisers, Zygote, CUDA, LuxCUDA, NPZ, MLUtils, Printf, ProgressMeter, MLFlowClient, JLD2, Statistics, Plots, Dates, ConvLSTM, Accessors
 using MLUtils, JLD2
-using ConvLSTM, Lux, CUDA, LuxCUDA
-using ProgressMeter, MLFlowClient, Plots, Dates
+using ConvLSTM, Lux, CUDA, LuxCUDA, Zygote
+using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics
 
-include(srcdir("src", "metrics.jl"))
+include(srcdir("metrics.jl"))
 
 const mlf = MLFlow()
 
 const experiment = getorcreateexperiment(mlf, "lux-mnist")
 
+const lossfn = BinaryFocalLoss()
+
 function get_dataloaders(batchsize, n_train)
     @load datadir("exp_pro", "big_train.jld2") dataset
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_train, y_train) = train[:, :, begin:n_train, :], train[:, :, 11:20, :]
+    (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
+    x_train = x_train[:, :, :, :, 1:1000]
+    y_train = y_train[:, :, :, 1:1000]
     @load datadir("exp_pro", "val.jld2") dataset
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_val, y_val) = val[:, :, 1:10, :], val[:, :, 11:20, :]
+    (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
 
     @load datadir("exp_pro", "ood_val.jld2") dataset
     ood_val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_ood_val, y_ood_val) = ood_val[:, :, 1:10, :], ood_val[:, :, 11:20, :]
+    (x_ood_val, y_ood_val) = reshape(ood_val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), ood_val[:, :, 11:20, :]
 
     return (
         DataLoader((x_train, y_train); batchsize),
@@ -31,7 +35,7 @@ function get_dataloaders(batchsize, n_train)
     )
 end
 
-function plot_predictions(model, train_state, data, run_info, epoch, name="predictions")
+function plot_predictions(tmp_location, model, train_state, data, run_info, epoch, name="predictions")
     x, y = data
     ps_trained, st_trained = (train_state.parameters, train_state.states)
     ŷ, _ = model(x, ps_trained, Lux.testmode(st_trained))
@@ -43,8 +47,8 @@ function plot_predictions(model, train_state, data, run_info, epoch, name="predi
             reshape(x[:, :, 1, :, idx], 64, :),
         ) |> cpu_device()
         fig = heatmap(data_to_plot, size=(128*10, 128*3), clims=(0, 1))
-        savefig(fig, "./artifacts/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
-        logartifact(mlf, run_info, "./artifacts/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
+        savefig(fig, "$(tmp_location)/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
+        logartifact(mlf, run_info, "$(tmp_location)/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
     end
 end
 
@@ -71,6 +75,7 @@ function simulate(
     rho,
     batchsize,
     use_bias,
+    seed,
     tmp_location = mktempdir(),
     n_steps=30,
 )
@@ -84,7 +89,7 @@ function simulate(
     model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
-    rng = Xoshiro(42)
+    rng = Xoshiro(seed)
     ps, st = Lux.setup(rng, model) |> dev
     opt = RMSProp(; eta, rho)
     logparam(mlf, run_info, Dict(
@@ -103,8 +108,8 @@ function simulate(
     ))
     train_state = Training.TrainState(model, ps, st, opt)
     @info "Starting train"
-
     for epoch in 1:n_steps
+        losses = Float32[]
         progress = Progress(length(train_loader); desc="Training Epoch $(epoch)", enabled=logging, barlen=32)
         for (x, y) in train_loader
             (_, loss, _, train_state) = Training.single_train_step!(
@@ -122,7 +127,7 @@ function simulate(
             (Symbol(f, "_val") => 0.0 for (_, f) in metrics_to_monitor)...,
         )
         @time "Validation epoch $(epoch)" for (x, y) in val_loader
-            ŷ, st_ = model_test(x, train_state.parameters, st_)
+            ŷ, st_ = model(x, train_state.parameters, st_)
             for s in size(y, 3), (func, f) in metrics_to_monitor
                 ŷ_t = @view ŷ[:, :, s, :]
                 y_t = @view y[:, :, s, :]
@@ -130,7 +135,7 @@ function simulate(
                 metrics_tests[Symbol(f, "_val")] += func(ŷ_t, y_t) / (size(y, 3) * length(val_loader))
             end
         end
-        logmetrics(mlf, run_info.run_id, metrics_tests, step=epoch)
+        logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
 
         # Out of domain validation run
         metrics_tests = Dict(
@@ -138,7 +143,7 @@ function simulate(
             (Symbol(f, "_ood_val") => 0.0 for (_, f) in metrics_to_monitor)...,
         )
         @time "Validation epoch $(epoch) (out of domain)" for (x, y) in ood_val_loader
-            ŷ, st_ = model_test(x, train_state.parameters, st_)
+            ŷ, st_ = model(x, train_state.parameters, st_)
             for s in size(y, 3), (func, f) in metrics_to_monitor
                 ŷ_t = @view ŷ[:, :, s, :]
                 y_t = @view y[:, :, s, :]
@@ -146,14 +151,14 @@ function simulate(
                 metrics_tests[Symbol(f, "_ood_val")] += func(ŷ_t, y_t) / (size(y, 3) * length(val_loader))
             end
         end
-        logmetrics(mlf, run_info.run_id, metrics_tests, step=epoch)
+        logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
 
         if ((epoch - 1) % 4 == 0) || (epoch == n_steps) 
             ps_trained, st_trained = (train_state.parameters, train_state.states) |> cpu_device()
             @save "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2" ps_trained st_trained
             logartifact(mlf, run_info, "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2")
-            plot_predictions(model_test, train_state, first(val_loader), run_info, epoch, "predictions")
-            plot_predictions(model_test, train_state, first(ood_val_loader), run_info, epoch, "ood_predictions")
+            plot_predictions(tmp_location, model, train_state, first(val_loader), run_info, epoch, "predictions")
+            plot_predictions(tmp_location, model, train_state, first(ood_val_loader), run_info, epoch, "ood_predictions")
         end
 
     end
@@ -181,7 +186,7 @@ function simulate(; kwargs...)
     end
 
     try
-        objective(run_info; kwargs...)
+        simulate(run_info; kwargs...)
         updaterun(mlf, run_info, "FINISHED")
     catch e
         if typeof(e) <: InterruptException
@@ -197,5 +202,19 @@ function simulate(; kwargs...)
 
 end
 
+h = 64
+eta = 3e-4
+b = (false, false, false)
 
-
+simulate(;
+    k_h=5,
+    k_x=5,
+    hidden=(h, h ÷ 2, h ÷ 2),
+    seed=42,
+    eta=eta,
+    rho=0.9,
+    n_steps=30,
+    batchsize=8,
+    use_bias=b,
+    mode=:conditional,
+)
