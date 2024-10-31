@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.5"
+julia_version = "1.10.6"
 manifest_format = "2.0"
 project_hash = "589e5bf5ecd2479ddfd14f6c7ff245bfbf60a226"
 
@@ -1101,7 +1101,7 @@ version = "1.4.2"
 
 [[deps.MLFlowClient]]
 deps = ["Base64", "Dates", "FilePathsBase", "FileTypes", "HTTP", "JSON", "ShowCases", "URIs", "UUIDs"]
-git-tree-sha1 = "1c1435cd7921b36b7fe843434e4adbffb5cfa2f9"
+git-tree-sha1 = "31ab1eef9f2e82e0e8b193516d25d513380b9fc9"
 repo-rev = "main"
 repo-url = "https://github.com/characat0/MLFlowClient.jl"
 uuid = "64a0f543-368b-4a9a-827a-e71edb2a0b83"
