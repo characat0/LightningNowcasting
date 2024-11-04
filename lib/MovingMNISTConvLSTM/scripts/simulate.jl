@@ -4,7 +4,7 @@ using DrWatson
 # using Lux, Random, Optimisers, Zygote, CUDA, LuxCUDA, NPZ, MLUtils, Printf, ProgressMeter, MLFlowClient, JLD2, Statistics, Plots, Dates, ConvLSTM, Accessors
 using MLUtils, JLD2
 using ConvLSTM, Lux, CUDA, LuxCUDA, Zygote
-using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics
+using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics, DataStructures
 
 include(srcdir("metrics.jl"))
 
@@ -18,8 +18,6 @@ function get_dataloaders(batchsize, n_train)
     @load datadir("exp_pro", "big_train.jld2") dataset
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
-    x_train = x_train[:, :, :, :, 1:1000]
-    y_train = y_train[:, :, :, 1:1000]
     @load datadir("exp_pro", "val.jld2") dataset
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
@@ -62,6 +60,25 @@ const metrics_to_monitor = Dict(
     accuracy => :accuracy,
     f1 => :f1,
 )
+
+function evaluate(model, state, metrics, dataset, name)
+    metric_values = DefaultDict{Symbol, Float64}(0.0)
+    ps, st = state.parameters, Lux.testmode(state.states)
+    @time "Evaluation ($(name))" for (x, y) in dataset
+        ŷ, st = model(x, ps, st)
+        for s in 1:size(y, 3), (func, f) in metrics
+            ŷ_t = @view ŷ[:, :, s:s, :]
+            y_t = @view y[:, :, s:s, :]
+
+            value = func(ŷ_t, y_t)
+            base_key = Symbol(f, "_$(name)")
+            metric_values[base_key] += value / (size(y, 3) * length(dataset))
+            metric_values[Symbol(base_key, :., lpad(s, 2, '0'))] += value / length(dataset)
+        end
+    end
+    metric_values
+end
+
 
 function simulate(
     run_info;
@@ -119,38 +136,12 @@ function simulate(
             next!(progress; showvalues = [("loss", loss)])
         end
         logmetric(mlf, run_info, "loss_train", mean(losses); step=epoch)
-        st_ = Lux.testmode(train_state.states)
-
         # Validation run
-        metrics_tests = Dict(
-            (Symbol(f, "_val.", s) => 0.0 for (_, f) in metrics_to_monitor, s in 1:10)...,
-            (Symbol(f, "_val") => 0.0 for (_, f) in metrics_to_monitor)...,
-        )
-        @time "Validation epoch $(epoch)" for (x, y) in val_loader
-            ŷ, st_ = model(x, train_state.parameters, st_)
-            for s in size(y, 3), (func, f) in metrics_to_monitor
-                ŷ_t = @view ŷ[:, :, s, :]
-                y_t = @view y[:, :, s, :]
-                metrics_tests[Symbol(f, "_val.", s)] += func(ŷ_t, y_t) / length(val_loader)
-                metrics_tests[Symbol(f, "_val")] += func(ŷ_t, y_t) / (size(y, 3) * length(val_loader))
-            end
-        end
+        metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
 
         # Out of domain validation run
-        metrics_tests = Dict(
-            (Symbol(f, "_ood_val.", s) => 0.0 for (_, f) in metrics_to_monitor, s in 1:10)...,
-            (Symbol(f, "_ood_val") => 0.0 for (_, f) in metrics_to_monitor)...,
-        )
-        @time "Validation epoch $(epoch) (out of domain)" for (x, y) in ood_val_loader
-            ŷ, st_ = model(x, train_state.parameters, st_)
-            for s in size(y, 3), (func, f) in metrics_to_monitor
-                ŷ_t = @view ŷ[:, :, s, :]
-                y_t = @view y[:, :, s, :]
-                metrics_tests[Symbol(f, "_ood_val.", s)] += func(ŷ_t, y_t) / length(val_loader)
-                metrics_tests[Symbol(f, "_ood_val")] += func(ŷ_t, y_t) / (size(y, 3) * length(val_loader))
-            end
-        end
+        metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :ood_val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
 
         if ((epoch - 1) % 4 == 0) || (epoch == n_steps) 
@@ -203,18 +194,19 @@ function simulate(; kwargs...)
 end
 
 h = 64
-eta = 3e-4
-b = (false, false, false)
+eta = 1e-4
+b = (true, true, true)
 
 simulate(;
-    k_h=5,
-    k_x=5,
+    k_h=3,
+    k_x=3,
     hidden=(h, h ÷ 2, h ÷ 2),
     seed=42,
     eta=eta,
     rho=0.9,
     n_steps=30,
-    batchsize=8,
+    batchsize=16,
     use_bias=b,
     mode=:conditional,
 )
+
