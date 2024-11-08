@@ -194,18 +194,18 @@ function simulate(; kwargs...)
 end
 
 h = 64
-eta = 1e-4
-b = (true, true, true)
+eta = 1e-3
+b = (false, true, true, true)
 
 simulate(;
-    k_h=3,
-    k_x=3,
-    hidden=(h, h ÷ 2, h ÷ 2),
+    k_h=5,
+    k_x=5,
+    hidden=(h, h÷2, h÷2, h÷2),
     seed=42,
     eta=eta,
     rho=0.9,
-    n_steps=30,
-    batchsize=16,
+    n_steps=20,
+    batchsize=8,
     use_bias=b,
     mode=:conditional,
 )

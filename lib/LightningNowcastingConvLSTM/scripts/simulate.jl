@@ -10,7 +10,7 @@ include(srcdir("metrics.jl"))
 
 const mlf = MLFlow()
 
-const experiment = getorcreateexperiment(mlf, "lux-lightning")
+const experiment = getorcreateexperiment(mlf, "lux-lightning-2")
 
 const lossfn = BinaryFocalLoss()
 
@@ -111,6 +111,7 @@ function simulate(
         "model.hidden_dims" => hidden,
         "model.batchsize" => batchsize,
         "model.use_bias" => use_bias,
+        "model.peephole" => peephole,
         "rng.algo" => string(typeof(rng)),
         "rng.seed" => seed,
         "loss.algo" => string(typeof(lossfn)),
@@ -184,13 +185,13 @@ function simulate(; kwargs...)
 end
 
 h = 64
-eta = 1e-4
-b = (true, true, true)
+eta = 2e-3
+b = (false, true)
 
 simulate(;
-    k_h=3,
-    k_x=3,
-    hidden=(h, h ÷ 2, h ÷ 2),
+    k_h=5,
+    k_x=5,
+    hidden=(h, h ÷ 2),
     seed=42,
     eta=eta,
     rho=0.9,
