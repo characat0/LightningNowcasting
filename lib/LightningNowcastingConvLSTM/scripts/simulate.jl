@@ -195,7 +195,7 @@ simulate(;
     seed=42,
     eta=eta,
     rho=0.9,
-    n_steps=30,
+    n_steps=10,
     batchsize=16,
     use_bias=b,
     mode=:conditional,
