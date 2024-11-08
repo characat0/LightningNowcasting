@@ -8,6 +8,8 @@ lat = h5read(datadir("exp_raw", "dataset.h5"), "lat")
 lon = h5read(datadir("exp_raw", "dataset.h5"), "lon")
 time = h5read(datadir("exp_raw", "dataset.h5"), "time")
 
+fed = convert.(UInt8, fed * Float32(255))
+
 fed = permutedims(fed[:, :, 1, :, :], (1, 2, 4, 3)) # WxHxTxN
 
 train, val = splitobs(fed; at=.8)
