@@ -16,8 +16,8 @@ const experiment = getorcreateexperiment(mlf, "lux-lightning-4")
 const lossfn = BinaryCrossEntropyLoss()
 
 
-function apply_gaussian_filter(ds::T)::T where {T}
-    k = Float32.(Kernel.gaussian(.9))
+function apply_gaussian_filter(ds::T, sigma=.9)::T where {T}
+    k = Float32.(Kernel.gaussian(sigma))
     mapslices(ds, dims=(1, 2)) do chunk
         res = imfilter(chunk, k)
         max.(chunk, res)
@@ -29,7 +29,8 @@ function get_dataloaders(batchsize, n_train)
     @load datadir("exp_pro", "train.jld2") dataset
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
-    y_train = apply_gaussian_filter(y_train)
+    y_train = apply_gaussian_filter(y_train, 1)
+    x_train = apply_gaussian_filter(x_train, .5)
     @load datadir("exp_pro", "val.jld2") dataset
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
@@ -110,7 +111,7 @@ function simulate(
     n_train = mode == :conditional ? STEPS_X + STEPS_Y : STEPS_X
     train_loader, val_loader = get_dataloaders(batchsize, n_train) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
-    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 3)
+    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 1)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
     rng = Xoshiro(seed)
