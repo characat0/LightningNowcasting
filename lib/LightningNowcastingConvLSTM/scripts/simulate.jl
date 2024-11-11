@@ -5,19 +5,31 @@ using DrWatson
 using MLUtils, JLD2
 using ConvLSTM, Lux, CUDA, LuxCUDA, Zygote
 using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics, DataStructures
+using ImageFiltering
 
 include(srcdir("metrics.jl"))
 
 const mlf = MLFlow()
 
-const experiment = getorcreateexperiment(mlf, "lux-lightning-2")
+const experiment = getorcreateexperiment(mlf, "lux-lightning-4")
 
-const lossfn = BinaryFocalLoss()
+const lossfn = BinaryCrossEntropyLoss()
+
+
+function apply_gaussian_filter(ds::T)::T where {T}
+    k = Float32.(Kernel.gaussian(.9))
+    mapslices(ds, dims=(1, 2)) do chunk
+        res = imfilter(chunk, k)
+        max.(chunk, res)
+    end
+end
+
 
 function get_dataloaders(batchsize, n_train)
     @load datadir("exp_pro", "train.jld2") dataset
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
+    y_train = apply_gaussian_filter(y_train)
     @load datadir("exp_pro", "val.jld2") dataset
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
@@ -98,7 +110,7 @@ function simulate(
     n_train = mode == :conditional ? STEPS_X + STEPS_Y : STEPS_X
     train_loader, val_loader = get_dataloaders(batchsize, n_train) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
-    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole)
+    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 3)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
     rng = Xoshiro(seed)
@@ -185,17 +197,17 @@ function simulate(; kwargs...)
 end
 
 h = 64
-eta = 2e-3
-b = (false, true)
+eta = 3e-4
+b = (false, false, true)
 
 simulate(;
     k_h=5,
     k_x=5,
-    hidden=(h, h ÷ 2),
+    hidden=(h, h÷2, h÷2),
     seed=42,
     eta=eta,
     rho=0.9,
-    n_steps=10,
+    n_steps=20,
     batchsize=16,
     use_bias=b,
     mode=:conditional,
