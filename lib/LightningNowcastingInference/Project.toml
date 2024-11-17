@@ -5,6 +5,7 @@ version = "1.0.0-DEV"
 
 [deps]
 ConvLSTM = "cc441fe5-8cc4-4841-90c4-26eb7180d202"
+PackageCompiler = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
 
 [compat]
 julia = "1.6.7"
