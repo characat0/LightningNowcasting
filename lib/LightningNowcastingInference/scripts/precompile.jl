@@ -1,4 +1,6 @@
 import ConvLSTM
 
-include(joinpath(pkgdir(ConvLSTM), "test", "runtests.jl"))
+test_path = joinpath(pkgdir(ConvLSTM), "test", "runtests.jl")
+
+include(test_path)
 
