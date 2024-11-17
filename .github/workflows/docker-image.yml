@@ -1,0 +1,16 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - lib/LightningNowcastingInference/**
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: cd lib/LightningNowcastingInference/ && docker build . --file Dockerfile --tag nowcasting_huascaran:latest
