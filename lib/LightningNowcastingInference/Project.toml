@@ -1,0 +1,16 @@
+name = "LightningNowcastingInference"
+uuid = "c5a35d53-b84b-4ee7-a8f2-c60a006f327a"
+authors = ["Marco Vela <36453977+characat0@users.noreply.github.com> and contributors"]
+version = "1.0.0-DEV"
+
+[deps]
+ConvLSTM = "cc441fe5-8cc4-4841-90c4-26eb7180d202"
+
+[compat]
+julia = "1.6.7"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
