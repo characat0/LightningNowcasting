@@ -69,7 +69,7 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 20 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
-          vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data --api-key=${{ secrets.VAST_API_KEY }}
+          vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data --api-key=${{ secrets.VAST_API_KEY }} < /dev/null
 
   train:
     runs-on: [self-hosted, gpu]
