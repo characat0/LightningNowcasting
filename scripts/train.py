@@ -62,7 +62,12 @@ try:
     while (status := check_status(instance_id)) in ['LOADING', 'WORKING']:
         now = datetime.datetime.now()
         print(now, status)
+        print(sdk.logs(INSTANCE_ID=instance_id, tail='5'))
         time.sleep(60)
+    print('='*64)
+    print('='*64)
+    print("Final status:", status)
+    print(sdk.logs(INSTANCE_ID=instance_id))
 except Exception as e:
     print(e)
 finally:
