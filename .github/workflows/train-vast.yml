@@ -15,6 +15,7 @@ on:
 
 jobs:
   create_instance:
+    permissions: write-all
     runs-on: [self-hosted, persistent]
     outputs:
       instance_id: ${{ steps.launch.outputs.instance_id }}

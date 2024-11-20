@@ -83,7 +83,6 @@ def launch_action_runner_with_gpu():
         sdk.destroy_instance(id=instance_id)
         raise e
 
-
 def start_training():
     instance_id = os.getenv('VAST_INSTANCE_ID')
     source = os.path.abspath(f"lib/{subpackage}/data/exp_raw")
