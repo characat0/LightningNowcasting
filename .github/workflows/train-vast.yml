@@ -40,7 +40,7 @@ jobs:
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" <<< y
           cat ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
-          vastai attach ssh ${{ steps.launch.outputs.instance_id }} --api-key=${{ secrets.VAST_API_KEY }}
+          vastai attach ssh ${{ steps.launch.outputs.instance_id }} $(cat ~/.ssh/id_rsa.pub) --api-key=${{ secrets.VAST_API_KEY }}
           ssh_url=$(vastai ssh-url ${{ steps.launch.outputs.instance_id }} --api-key=${{ secrets.VAST_API_KEY }})
           host=$(echo $ssh_url | sed -E 's|ssh://([^@]+)@([^:]+):([0-9]+)|\2|')
           port=$(echo $ssh_url | sed -E 's|ssh://([^@]+)@([^:]+):([0-9]+)|\3|')
