@@ -71,7 +71,7 @@ def launch_instance():
         while (status := check_status(instance_id)) in ['LOADING', 'UNKNOWN']:
             now = datetime.datetime.now()
             print(now, status)
-            time.sleep(60)
+            time.sleep(20)
             if (now - start_time).seconds > (60 * 10):
                 print("Timeout while waiting instance to finish loading")
     except Exception as e:
