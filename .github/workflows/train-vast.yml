@@ -27,6 +27,17 @@ jobs:
           pip install vastai==0.2.6
       - name: Prepare
         run: cd lib/${{ inputs.subpackage }} && chmod +x ./scripts/prepare.sh && type ./scripts/prepare.sh && ./scripts/prepare.sh
+      - name: Get Runner Token
+        id: get_runner_token
+        run: |
+          token=$(gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/actions/runners/registration-token | jq -r .token)
+          echo "runner_token=$token" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Launch Instance
         id: launch
         run: python scripts/train.py LAUNCH_INSTANCE
@@ -42,7 +53,7 @@ jobs:
           ENV_SUBPACKAGE: ${{ inputs.subpackage }}
           ENV_MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
           ENV_MLFLOW_TRACKING_USERNAME: lightning
-          ENV_GITHUB_ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
       - name: Copy Data
         run: |
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" <<< y
