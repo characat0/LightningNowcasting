@@ -56,7 +56,7 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 20 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
-          vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data
+          vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data --api-key=${{ secrets.VAST_API_KEY }}
 
   train:
     runs-on: [self-hosted, gpu]
@@ -76,7 +76,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: |
+      - name: Destroy instance
+        run: |
           pip install vastai==0.2.6
-          vastai destroy instance "${{ steps.launch.outputs.instance_id }}" --api-key=${{ secrets.VAST_API_KEY }}
+          vastai destroy instance "${{ needs.create_instance.outputs.instance_id }}" --api-key=${{ secrets.VAST_API_KEY }}
 
