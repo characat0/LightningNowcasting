@@ -39,6 +39,7 @@ echo "93ac1b7ce743ee85b5d386f5c1787385ef07b3d7c728ff66ce0d3813d5f46900  $RUNNER_
 sudo -u "$GH_USER" tar xzf "$RUNNER_ARCH"
 
 # Setup the runner package
+echo "https://github.com/$GITHUB_REPOSITORY"
 sudo -u "$GH_USER" ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu
 
 # Mark the runner as ready

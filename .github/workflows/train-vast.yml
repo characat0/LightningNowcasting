@@ -55,6 +55,7 @@ jobs:
           ENV_MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
           ENV_MLFLOW_TRACKING_USERNAME: lightning
           ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
+          ENV_GITHUB_REPOSITORY: ${{ github.repository }}
       - name: Copy Data
         run: |
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" <<< y
