@@ -55,15 +55,25 @@ def check_status(instance_id):
         return 'FAILED'
     if 'SUCCESS' in files:
         return 'FINISH'
-    return 'WORKING'
+    if 'READY' in files:
+        return 'READY'
+    return 'UNKNOWN'
 
 start_time = datetime.datetime.now()
 try:
-    while (status := check_status(instance_id)) in ['LOADING', 'WORKING']:
+    while (status := check_status(instance_id)) in ['LOADING', 'UNKNOWN']:
         now = datetime.datetime.now()
         print(now, status)
-        print(sdk.logs(INSTANCE_ID=instance_id, tail='5'))
         time.sleep(60)
+        if (now - start_time).seconds > (60 * 10):
+            print("Timeout while waiting instance to finish loading")
+    if status == 'READY':
+        r = repo.split('/')[1]
+        sdk.copy(f"./lib/{subpackage}/data/exp_raw", f"{instance_id}:/root/{r}/lib/{subpackage}/data/exp_raw")
+    while (status := check_status(instance_id)) in ['READY']:
+        print(datetime.datetime.now(), status)
+        time.sleep(60)
+    print(sdk.logs(INSTANCE_ID=instance_id, tail='5'))
     print('='*64)
     print('='*64)
     print("Final status:", status)
