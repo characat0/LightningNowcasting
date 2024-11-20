@@ -42,7 +42,7 @@ def check_status(instance_id):
 
 def launch_action_runner_with_gpu():
     instances_kwargs = {k.removeprefix('VAST_').lower():v for (k,v) in env.items() if k.startswith('VAST_') and k != 'VAST_API_KEY'}
-    instance_env = ' '.join([f"-e {k.removeprefix('VAST_')}={v}" for (k,v) in env.items() if k.startswith('ENV_')])
+    instance_env = ' '.join([f"-e {k.removeprefix('ENV_')}={v}" for (k,v) in env.items() if k.startswith('ENV_')])
 
     print(instances_kwargs)
     output: str = sdk.launch_instance(
