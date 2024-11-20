@@ -45,7 +45,9 @@ jobs:
           host=$(echo $ssh_url | sed -E 's|ssh://([^@]+)@([^:]+):([0-9]+)|\2|')
           port=$(echo $ssh_url | sed -E 's|ssh://([^@]+)@([^:]+):([0-9]+)|\3|')
           ssh-keyscan -p ${port} ${host} >> ~/.ssh/known_hosts
-          ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
+          ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
+            sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
+            sleep 20 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
       - name: Training
         run: python scripts/train.py START_TRAINING
         env:
