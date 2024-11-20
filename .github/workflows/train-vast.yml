@@ -37,7 +37,7 @@ jobs:
           MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
       - name: SSH
         run: |
-          ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" <<< y
           cat ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
           vastai attach ssh $(cat ~/.ssh/id_rsa.pub) --api-key=${{ secrets.VAST_API_KEY }}
