@@ -69,7 +69,7 @@ try:
             print("Timeout while waiting instance to finish loading")
     if status == 'READY':
         r = repo.split('/')[1]
-        sdk.copy(f"./lib/{subpackage}/data/exp_raw", f"{instance_id}:/root/{r}/lib/{subpackage}/data/exp_raw")
+        sdk.copy(src=f"./lib/{subpackage}/data/exp_raw", dst=f"{instance_id}:/root/{r}/lib/{subpackage}/data/exp_raw")
     while (status := check_status(instance_id)) in ['READY']:
         print(datetime.datetime.now(), status)
         time.sleep(60)
