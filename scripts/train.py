@@ -63,7 +63,7 @@ try:
         now = datetime.datetime.now()
         print(now, status)
         time.sleep(60)
-except e:
+except Exception as e:
     print(e)
 finally:
     print("Destroying instance")
