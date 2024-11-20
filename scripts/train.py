@@ -83,3 +83,6 @@ except Exception as e:
 finally:
     print("Destroying instance")
     sdk.destroy_instance(id=instance_id)
+
+if status == 'FAILED':
+    raise Exception('Failed to train')
