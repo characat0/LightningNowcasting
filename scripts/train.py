@@ -84,5 +84,5 @@ finally:
     print("Destroying instance")
     sdk.destroy_instance(id=instance_id)
 
-if status == 'FAILED':
+if (status == 'FAILED') or e is not None:
     raise Exception('Failed to train')
