@@ -4,10 +4,12 @@ using DrWatson
 using HDF5, JLD2, MLUtils, Random, CodecZlib
 using ImageFiltering
 
-fed = h5read(datadir("exp_raw", "dataset.h5"), "FED")
-lat = h5read(datadir("exp_raw", "dataset.h5"), "lat")
-lon = h5read(datadir("exp_raw", "dataset.h5"), "lon")
-time = h5read(datadir("exp_raw", "dataset.h5"), "time")
+path = datadir("exp_raw", "nowcasting.h5")
+
+fed = h5read(path, "FED")
+lat = h5read(path, "lat")
+lon = h5read(path, "lon")
+time = h5read(path, "time")
 
 fed = convert.(UInt8, fed * Float32(255))
 

@@ -1,0 +1,37 @@
+name: Train on Vast AI
+
+on:
+  workflow_dispatch:
+    inputs:
+      subpackage:
+        description: Subpackage used as root
+        required: true
+      gpu_name:
+        description: GPU used
+        default: "RTX_3090"
+      image_name:
+        description: Image to be used
+        default: "glcr.b-data.ch/julia/ver:1.10.6"
+
+jobs:
+  run_script:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.10
+      - run: |
+          pip install vastai==0.2.6
+      - name: Prepare
+        run: cd lib/${{ inputs.subpackage }} && type ./scripts/prepare.sh && ./scripts/prepare.sh
+      - name: Train
+        run: python scripts/train.py
+        env:
+          VAST_GPU_NAME: ${{ inputs.gpu_name }}
+          VAST_IMAGE: ${{ inputs.image_name }}
+          VAST_API_KEY: ${{ secrets.VAST_API_KEY }}
+          REPO_NAME: ${{ github.repository }}
+          SUBPACKAGE: ${{ inputs.subpackage }}
+          MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+

@@ -16,6 +16,15 @@ const experiment = getorcreateexperiment(mlf, "lux-lightning-4")
 const lossfn = BinaryCrossEntropyLoss()
 
 
+function apply_bilinearfilter(ds::T)::T where {T}
+    k_org = [1 2 1; 2 4 2; 1 2 1]
+    k = centered(k_org / Float32(sum(k_org)))
+    mapslices(ds, dims=(1, 2)) do chunk
+        res = imfilter(chunk, k)
+        max.(chunk, res)
+    end
+end
+
 function apply_gaussian_filter(ds::T, sigma=.9)::T where {T}
     k = Float32.(Kernel.gaussian(sigma))
     mapslices(ds, dims=(1, 2)) do chunk
@@ -30,7 +39,7 @@ function get_dataloaders(batchsize, n_train)
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
     y_train = apply_gaussian_filter(y_train, 1)
-    x_train = apply_gaussian_filter(x_train, .5)
+    x_train = apply_bilinearfilter(x_train)
     @load datadir("exp_pro", "val.jld2") dataset
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
@@ -52,7 +61,7 @@ function plot_predictions(tmp_location, model, train_state, data, run_info, epoc
             reshape(y[:, :, :, idx], 64, :),
             reshape(x[:, :, 1, :, idx], 64, :),
         ) |> cpu_device()
-        fig = heatmap(data_to_plot, size=(128*10, 128*3), clims=(0, 1))
+        fig = heatmap(data_to_plot, size=(128*10 + 80, 128*3 + 30), clims=(0, 1))
         savefig(fig, "$(tmp_location)/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
         logartifact(mlf, run_info, "$(tmp_location)/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
     end
@@ -198,8 +207,8 @@ function simulate(; kwargs...)
 end
 
 h = 64
-eta = 3e-4
-b = (false, false, true)
+eta = 3e-3
+b = (false, true, true)
 
 simulate(;
     k_h=5,
