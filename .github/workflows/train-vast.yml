@@ -41,7 +41,7 @@ jobs:
           cat ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
           vastai attach ssh $(cat ~/.ssh/id_rsa.pub) --api-key=${{ secrets.VAST_API_KEY }})
-          ssh_url=$(vastai ssh-url ${{ steps.tests.outputs.stdout }} --api-key=${{ secrets.VAST_API_KEY }})
+          ssh_url=$(vastai ssh-url ${{ steps.launch.outputs.instance_id }} --api-key=${{ secrets.VAST_API_KEY }})
           host=$(echo $ssh_url | sed -E 's|ssh://([^@]+)@([^:]+):([0-9]+)|\2|')
           port=$(echo $ssh_url | sed -E 's|ssh://([^@]+)@([^:]+):([0-9]+)|\3|')
           ssh-keyscan -p ${port} ${host} >> ~/.ssh/known_hosts
@@ -55,3 +55,4 @@ jobs:
           REPO_NAME: ${{ github.repository }}
           SUBPACKAGE: ${{ inputs.subpackage }}
           MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          VAST_INSTANCE_ID: ${{ steps.launch.outputs.instance_id }}

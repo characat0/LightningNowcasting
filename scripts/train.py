@@ -75,27 +75,31 @@ def launch_instance():
             if (now - start_time).seconds > (60 * 10):
                 print("Timeout while waiting instance to finish loading")
     except Exception as e:
-        print(e)
-    finally:
         print("Destroying instance")
         sdk.destroy_instance(id=instance_id)
+        raise e
 
-    if (status == 'FAILED') or e is not None:
+    if status == 'FAILED':
         raise Exception('Failed to train')
 
 
 def start_training():
     instance_id = os.getenv('VAST_INSTANCE_ID')
-    status = check_status(instance_id)
     source = os.path.abspath(f"lib/{subpackage}/data/exp_raw")
-    if status == 'READY':
-        r = repo.split('/')[1]
-        o = sdk.copy(src=source, dst=f"{instance_id}:/root/{r}/lib/{subpackage}/data/exp_raw")
-        print(o)
-    while (status := check_status(instance_id)) in ['READY']:
-        print(datetime.datetime.now(), status)
-        time.sleep(60)
-        print(sdk.logs(INSTANCE_ID=instance_id, tail='5'))
+    try:
+        status = check_status(instance_id)
+        if status == 'READY':
+            r = repo.split('/')[1]
+            o = sdk.copy(src=source, dst=f"{instance_id}:/root/{r}/lib/{subpackage}/data/exp_raw")
+            print(o)
+            
+        while (status := check_status(instance_id)) in ['READY']:
+            print(datetime.datetime.now(), status)
+            time.sleep(60)
+            print(sdk.logs(INSTANCE_ID=instance_id, tail='5'))
+    finally:
+        print("Destroying instance")
+        sdk.destroy_instance(id=instance_id)
     print('='*64)
     print('='*64)
     print("Final status:", status)
