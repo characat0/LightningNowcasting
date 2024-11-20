@@ -38,7 +38,7 @@ jobs:
             /repos/${{ github.repository }}/actions/runners/registration-token | jq -r .token)
           echo "runner_token=$token" >> $GITHUB_ENV
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
       - name: Launch Instance
         id: launch
         run: python scripts/train.py LAUNCH_INSTANCE
