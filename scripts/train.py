@@ -40,18 +40,16 @@ def check_status(instance_id):
         return 'READY'
     return 'UNKNOWN'
 
-def launch_instance():
+def launch_action_runner_with_gpu():
     instances_kwargs = {k.removeprefix('VAST_').lower():v for (k,v) in env.items() if k.startswith('VAST_') and k != 'VAST_API_KEY'}
+    instance_env = ' '.join([f"-e {k.removeprefix('VAST_')}={v}" for (k,v) in env.items() if k.startswith('ENV_')])
+
     print(instances_kwargs)
     output: str = sdk.launch_instance(
         num_gpus="1", 
-        onstart="./scripts/startup-train.sh",
+        onstart="./scripts/startup.sh",
         disk=64,
-        env=f"-e REPO_NAME={repo} "
-            f"-e SUBPACKAGE={subpackage} "
-            f"-e MLFLOW_TRACKING_URI=http://mlflow.marcovela.com:6969/api "
-            f"-e MLFLOW_TRACKING_USERNAME=lightning "
-            f"-e MLFLOW_TRACKING_PASSWORD={mlflow_password}",
+        env=instance_env,
         raw=True,
         **instances_kwargs,
     )
@@ -74,13 +72,16 @@ def launch_instance():
             time.sleep(20)
             if (now - start_time).seconds > (60 * 10):
                 print("Timeout while waiting instance to finish loading")
+        print("Final status:", status)
+        if status == 'ERROR':
+            print(sdk.logs(INSTANCE_ID=instance_id))
+            raise Exception("Error while loading instance")
+        elif status == 'READY':
+            print("Instance ready to receive jobs")
     except Exception as e:
         print("Destroying instance")
         sdk.destroy_instance(id=instance_id)
         raise e
-
-    if status == 'FAILED':
-        raise Exception('Failed to train')
 
 
 def start_training():
@@ -106,6 +107,6 @@ def start_training():
     print(sdk.logs(INSTANCE_ID=instance_id))
 
 if sys.argv[1] == 'LAUNCH_INSTANCE':
-    launch_instance()
+    launch_action_runner_with_gpu()
 elif sys.argv[1] == 'START_TRAINING':
     start_training()

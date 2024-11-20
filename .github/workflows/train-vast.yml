@@ -14,8 +14,10 @@ on:
         default: "glcr.b-data.ch/julia/ver:1.10.6"
 
 jobs:
-  run_script:
-    runs-on: self-hosted
+  create_instance:
+    runs-on: [self-hosted, persistent]
+    outputs:
+      instance_id: ${{ steps.launch.outputs.instance_id }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,8 +36,14 @@ jobs:
           VAST_API_KEY: ${{ secrets.VAST_API_KEY }}
           REPO_NAME: ${{ github.repository }}
           SUBPACKAGE: ${{ inputs.subpackage }}
-          MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
-      - name: SSH
+          
+          ENV_REPO_NAME: ${{ github.repository }}
+          ENV_MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          ENV_SUBPACKAGE: ${{ inputs.subpackage }}
+          ENV_MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
+          ENV_MLFLOW_TRACKING_USERNAME: lightning
+          ENV_GITHUB_ACTIONS_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+      - name: Copy Data
         run: |
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" <<< y
           cat ~/.ssh/id_rsa.pub
@@ -48,13 +56,27 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 20 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
-      - name: Training
-        run: python scripts/train.py START_TRAINING
-        env:
-          VAST_GPU_NAME: ${{ inputs.gpu_name }}
-          VAST_IMAGE: ${{ inputs.image_name }}
-          VAST_API_KEY: ${{ secrets.VAST_API_KEY }}
-          REPO_NAME: ${{ github.repository }}
-          SUBPACKAGE: ${{ inputs.subpackage }}
-          MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
-          VAST_INSTANCE_ID: ${{ steps.launch.outputs.instance_id }}
+          vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data
+
+  train:
+    runs-on: [self-hosted, gpu]
+    needs: create_instance
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cp --no-clobber -r /opt/data ./data
+          chmod +x ./scripts/train.sh && ./scripts/train.sh
+        working-dir: lib/${{ inputs.subpackage }}
+
+  cleanup:
+    runs-on: [self-hosted, persistent]
+    needs: [train, create_instance]
+    if: always()
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: |
+          pip install vastai==0.2.6
+          vastai destroy instance "${{ steps.launch.outputs.instance_id }}" --api-key=${{ secrets.VAST_API_KEY }}
+

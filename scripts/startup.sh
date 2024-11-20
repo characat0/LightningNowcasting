@@ -15,6 +15,9 @@ echo "Updating system and installing dependencies..."
 sudo apt update
 sudo apt install -y curl tar wget coreutils git
 
+# Remove tmux
+touch ~/.no_auto_tmux;
+
 # Create the 'gh' user if it doesn't exist
 if ! id -u "$GH_USER" &>/dev/null; then
     echo "Creating user '$GH_USER'..."
