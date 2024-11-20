@@ -24,7 +24,7 @@ jobs:
       - run: |
           pip install vastai==0.2.6
       - name: Prepare
-        run: cd lib/${{ inputs.subpackage }} && type ./scripts/prepare.sh && ./scripts/prepare.sh
+        run: cd lib/${{ inputs.subpackage }} && chmod +x ./scripts/prepare.sh && type ./scripts/prepare.sh && ./scripts/prepare.sh
       - name: Train
         run: python scripts/train.py
         env:
