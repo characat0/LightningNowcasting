@@ -23,7 +23,7 @@ print(instances_kwargs)
 
 output: str = sdk.launch_instance(
     num_gpus="1", 
-    onstart="startup-train.sh",
+    onstart="./scripts/startup-train.sh",
     disk=64,
     env=f"-e REPO_NAME={repo} "
         f"-e SUBPACKAGE={subpackage} "
