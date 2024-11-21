@@ -69,7 +69,7 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 20 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
-          stdbuf -oL vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data --api-key=${{ secrets.VAST_API_KEY }} 2>&1 | grep -q "password:" && { echo "Command asked for input!" >&2; exit 1; }
+            vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data --api-key=${{ secrets.VAST_API_KEY }}
 
   train:
     runs-on: [self-hosted, gpu]
