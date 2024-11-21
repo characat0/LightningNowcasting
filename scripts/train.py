@@ -51,8 +51,6 @@ def launch_action_runner_with_gpu():
         disk=64,
         env=instance_env,
         raw=True,
-        ssh=True,
-        direct=True,
         **instances_kwargs,
     )
     print(output)
