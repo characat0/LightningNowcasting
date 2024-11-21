@@ -36,6 +36,7 @@ RUNNER_ALLOW_RUNASROOT=1 ./config.sh --unattended --url https://github.com/$GITH
 
 echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
 echo "export JULIA_NUM_THREADS=16" >> ~/.bashrc
+echo "export JULIA_SLOW_PROGRESS_BAR=true">> ~/.bashrc
 
 echo $(realpath ~/.bashrc)
 cat ~/.bashrc

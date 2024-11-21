@@ -158,7 +158,8 @@ function simulate(
     @info "Starting train"
     for epoch in 1:n_steps
         losses = Float32[]
-        progress = Progress(length(train_loader); desc="Training Epoch $(epoch)", enabled=logging, barlen=32)
+        dt = logging ? 0.1 : 60.0
+        progress = Progress(length(train_loader); dt=dt, desc="Training Epoch $(epoch)", barlen=32)
         for (x, y) in train_loader
             (_, loss, _, train_state) = Training.single_train_step!(
                 AutoZygote(), lossfn, (x, y), train_state
@@ -196,6 +197,7 @@ function simulate(; kwargs...)
     run_info = createrun(mlf, experiment; tags=tags)
     @show run_info.info.run_name
     tmpfolder = mktempdir()
+    logging = parse(Bool, get(ENV, "JULIA_SLOW_PROGRESS_BAR", "false"))
 
     try
         logsystemmetrics(run_info)
@@ -210,7 +212,7 @@ function simulate(; kwargs...)
             write(f, d[:gitpatch])
             logartifact(mlf, run_info, f)
         end
-        simulate(run_info; kwargs...)
+        simulate(run_info; logging=logging, kwargs...)
         updaterun(mlf, run_info, "FINISHED")
     catch e
         if typeof(e) <: InterruptException
