@@ -82,6 +82,7 @@ jobs:
           tree -hau -L 4 lib/${{ inputs.subpackage }}/data
       - name: Install Packages
         run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
+        working-directory: lib/${{ inputs.subpackage }}
       - name: Train
         run: |
           source ~/.bashrc && ./scripts/train.sh
