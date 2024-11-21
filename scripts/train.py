@@ -51,6 +51,7 @@ def launch_action_runner_with_gpu():
         disk=64,
         env=instance_env,
         raw=True,
+        ssh=True,
         **instances_kwargs,
     )
     print(output)
@@ -83,6 +84,13 @@ def launch_action_runner_with_gpu():
         sdk.destroy_instance(id=instance_id)
         raise e
 
+def copy_data():
+    instance_id = os.getenv('VAST_INSTANCE_ID')
+    source = os.path.abspath(f"lib/{subpackage}/data")
+    print(source)
+    o = sdk.copy(src=source, dst=f"{instance_id}:/opt/data")
+
+
 def start_training():
     instance_id = os.getenv('VAST_INSTANCE_ID')
     source = os.path.abspath(f"lib/{subpackage}/data/exp_raw")
@@ -90,7 +98,6 @@ def start_training():
         status = check_status(instance_id)
         if status == 'READY':
             r = repo.split('/')[1]
-            o = sdk.copy(src=source, dst=f"{instance_id}:/root/{r}/lib/{subpackage}/data/exp_raw")
             print(o)
             
         while (status := check_status(instance_id)) in ['READY']:
