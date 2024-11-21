@@ -40,7 +40,7 @@ sudo -u "$GH_USER" tar xzf "$RUNNER_ARCH"
 
 # Setup the runner package
 echo "https://github.com/$GITHUB_REPOSITORY"
-sudo -u "$GH_USER" ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu
+sudo -u "$GH_USER" ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu --ephemeral --disableupdate
 
 # Mark the runner as ready
 touch /root/READY
