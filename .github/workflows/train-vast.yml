@@ -80,6 +80,8 @@ jobs:
           tar -xzf data.tar.gz
           cp  --no-clobber -r ./data/* lib/${{ inputs.subpackage }}/data
           tree -hau -L 4 lib/${{ inputs.subpackage }}/data
+      - name: Install Packages
+        run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
       - name: Train
         run: |
           source ~/.bashrc && ./scripts/train.sh

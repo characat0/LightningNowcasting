@@ -158,7 +158,7 @@ function simulate(
     @info "Starting train"
     for epoch in 1:n_steps
         losses = Float32[]
-        dt = logging ? 0.1 : 60.0
+        dt = logging ? 60.0 : 0.1
         progress = Progress(length(train_loader); dt=dt, desc="Training Epoch $(epoch)", barlen=32)
         for (x, y) in train_loader
             (_, loss, _, train_state) = Training.single_train_step!(
