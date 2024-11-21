@@ -53,10 +53,10 @@ jobs:
           SUBPACKAGE: ${{ inputs.subpackage }}
           
           ENV_REPO_NAME: ${{ github.repository }}
-          ENV_MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          # ENV_MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           ENV_SUBPACKAGE: ${{ inputs.subpackage }}
-          ENV_MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
-          ENV_MLFLOW_TRACKING_USERNAME: lightning
+          # ENV_MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
+          # ENV_MLFLOW_TRACKING_USERNAME: lightning
           ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
           ENV_GITHUB_REPOSITORY: ${{ github.repository }}
       - name: Copy Data
@@ -75,11 +75,17 @@ jobs:
         run: |
           curl -o data.tar.gz ${{ needs.create_instance.outputs.data_url }}
           tar -xzf data.tar.gz
-          cp  --no-clobber -r ./data lib/${{ inputs.subpackage }}/data
+          cp  --no-clobber -r ./data/* lib/${{ inputs.subpackage }}/data
+          ls -lh lib/${{ inputs.subpackage }}/data
       - name: Train
         run: |
-          chmod +x ./scripts/train.sh && ./scripts/train.sh
+          PATH=$PATH:/usr/local/julia/bin chmod +x ./scripts/train.sh && ./scripts/train.sh
         working-directory: lib/${{ inputs.subpackage }}
+        env:
+          JULIA_NUM_THREADS: auto
+          MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
+          MLFLOW_TRACKING_USERNAME: lightning
+          MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
 
   cleanup:
     runs-on: [self-hosted, persistent]
