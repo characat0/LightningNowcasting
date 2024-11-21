@@ -45,6 +45,9 @@ sudo -u "$GH_USER" ./config.sh --unattended --url https://github.com/$GITHUB_REP
 sudo -u "$GH_USER" echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
 sudo -u "$GH_USER" echo "export JULIA_NUM_THREADS=auto" >> ~/.bashrc
 
+cat $(realpath ~/.bashrc)
+cat ~/.bashrc
+
 # Mark the runner as ready
 touch /root/READY
 
