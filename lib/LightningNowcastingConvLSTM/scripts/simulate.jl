@@ -6,7 +6,6 @@ using MLUtils, JLD2
 using ConvLSTM, Lux, CUDA, LuxCUDA, Zygote
 using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics, DataStructures
 using ImageFiltering
-import Sys
 import JSON
 
 include(srcdir("metrics.jl"))
