@@ -22,6 +22,7 @@ jobs:
     outputs:
       instance_id: ${{ steps.launch.outputs.instance_id }}
       data_url: ${{ steps.data.outputs.data_url }}
+      gpu_info: ${{ steps.gpu_info.outputs.gpu_info }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,12 +54,14 @@ jobs:
           SUBPACKAGE: ${{ inputs.subpackage }}
           
           ENV_REPO_NAME: ${{ github.repository }}
-          # ENV_MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           ENV_SUBPACKAGE: ${{ inputs.subpackage }}
-          # ENV_MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
-          # ENV_MLFLOW_TRACKING_USERNAME: lightning
           ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
           ENV_GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Get GPU info
+        id: gpu_info
+        run: |
+          info=$(vastai show instance ${{ steps.launch.outputs.instance_id }} --raw | jq -cr 'with_entries(select(.key | startswith("gpu")))')
+          echo "gpu_info=$info" >> "$GITHUB_OUTPUT"
       - name: Copy Data
         id: data
         run: |
@@ -76,17 +79,18 @@ jobs:
           curl -o data.tar.gz ${{ needs.create_instance.outputs.data_url }}
           tar -xzf data.tar.gz
           cp  --no-clobber -r ./data/* lib/${{ inputs.subpackage }}/data
-          ls -lh lib/${{ inputs.subpackage }}/data
+          tree -hau -L 4 lib/${{ inputs.subpackage }}/data
       - name: Train
         run: |
-          source ~/.bashrc
-          chmod +x ./scripts/train.sh && ./scripts/train.sh
+          source ~/.bashrc && ./scripts/train.sh
         working-directory: lib/${{ inputs.subpackage }}
         env:
           JULIA_NUM_THREADS: auto
           MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
           MLFLOW_TRACKING_USERNAME: lightning
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          REPOSITORY_URL: https://github.com/${{ github.repository }}.git
+          GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
 
   cleanup:
     runs-on: [self-hosted, persistent]

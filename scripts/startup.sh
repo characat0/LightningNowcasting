@@ -13,7 +13,7 @@ GH_USER="gh"
 # Update and install dependencies
 echo "Updating system and installing dependencies..."
 sudo apt-get update
-sudo apt-get install -y curl tar wget coreutils git
+sudo apt-get install -y curl tar wget coreutils git tree
 
 # Remove tmux
 touch ~/.no_auto_tmux;

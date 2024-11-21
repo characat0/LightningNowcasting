@@ -7,6 +7,7 @@ using ConvLSTM, Lux, CUDA, LuxCUDA, Zygote
 using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics, DataStructures
 using ImageFiltering
 import Sys
+import JSON
 
 include(srcdir("metrics.jl"))
 
@@ -185,7 +186,7 @@ function simulate(; kwargs...)
     d = tag!(Dict{Symbol, Any}(), storepatch=true, commit_message=true)
     tags = [
         Dict("key" => "mlflow.source.git.commit", "value" => string(chopsuffix(d[:gitcommit], "-dirty"))),
-        Dict("key" => "mlflow.source.name", "value" => "https://github.com/characat0/lux-example"),
+        Dict("key" => "mlflow.source.name", "value" => get(ENV, "REPOSITORY_URL", "https://github.com/characat0/LightningNowcasting.git")),
         Dict("key" => "mlflow.source.type", "value" => "git"),
         Dict("key" => "mlflow.source.branch", "value" => "main"),
         Dict("key" => "mlflow.note.content", "value" => "Commit message: $(string(d[:gitmessage]))"),
@@ -195,6 +196,11 @@ function simulate(; kwargs...)
     @show run_info.info.run_name
     tmpfolder = mktempdir()
     logsystemmetrics(run_info)
+    gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
+    if length(info) > 0
+        @show gpu_info
+        logparam(mlf, gpu_info, info)
+    end
 
     if haskey(d, :gitpatch)
         f = "$(tmpfolder)/head.patch"
