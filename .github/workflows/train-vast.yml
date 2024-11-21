@@ -5,6 +5,7 @@ on:
     inputs:
       subpackage:
         description: Subpackage used as root
+        default: LightningNowcastingConvLSTM
         required: true
       gpu_name:
         description: GPU used
