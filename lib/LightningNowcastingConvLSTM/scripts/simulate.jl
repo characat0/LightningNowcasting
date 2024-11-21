@@ -196,7 +196,7 @@ function simulate(; kwargs...)
     tmpfolder = mktempdir()
     logsystemmetrics(run_info)
     gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
-    if length(info) > 0
+    if length(gpu_info) > 0
         @show gpu_info
         logparam(mlf, run_info, gpu_info)
     end
