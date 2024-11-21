@@ -27,31 +27,26 @@ function logsystemmetrics(run_info)
 end
 
 
-function apply_bilinearfilter(ds::T)::T where {T}
-    k_org = [1 2 1; 2 4 2; 1 2 1]
-    k = centered(k_org / Float32(sum(k_org)))
-    mapslices(ds, dims=(1, 2)) do chunk
-        res = imfilter(chunk, k)
-        max.(chunk, res)
-    end
+function apply_bilinearfilter(ds::AbstractArray{T, N}) where {T, N}
+    K = ntuple(Returns(1), N - 2)
+    k_org = reshape([1 2 1; 2 4 2; 1 2 1], (3, 3, K...))
+    k = centered(k_org / T(sum(k_org)))
+    imfilter(ds, k)
 end
 
-function apply_gaussian_filter(ds::T, sigma=.9)::T where {T}
-    k = Float32.(Kernel.gaussian(sigma))
-    mapslices(ds, dims=(1, 2)) do chunk
-        res = imfilter(chunk, k)
-        max.(chunk, res)
-    end
+function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
+    K = ntuple(Returns(0), N - 2)
+    k = T.(Kernel.gaussian((sigma, sigma, K...)))
+    imfilter(ds, k)
 end
-
 
 function get_dataloaders(batchsize, n_train)
     @load datadir("exp_pro", "train.jld2") dataset
     @show "Loaded training set"
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
-    # @time "Aplying gaussian filter to y_train" y_train = apply_gaussian_filter(y_train, 1)
-    # @time "Applying gaussian filter to x_train" x_train = apply_bilinearfilter(x_train)
+    @time "Gaussian filter to y_train" y_train = apply_gaussian_filter(y_train, 1)
+    @time "Gaussian filter to x_train" x_train = apply_bilinearfilter(x_train)
     @load datadir("exp_pro", "val.jld2") dataset
     @show "Loaded validation set"
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
