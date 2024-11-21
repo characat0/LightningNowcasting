@@ -49,8 +49,8 @@ function get_dataloaders(batchsize, n_train)
     @load datadir("exp_pro", "train.jld2") dataset
     train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_train, y_train) = reshape(train[:, :, begin:n_train, :], size(train)[1:2]..., 1, n_train, :), train[:, :, 11:20, :]
-    y_train = apply_gaussian_filter(y_train, 1)
-    x_train = apply_bilinearfilter(x_train)
+    @time "Aplying gaussian filter to y_train" y_train = apply_gaussian_filter(y_train, 1)
+    @time "Applying gaussian filter to x_train" x_train = apply_bilinearfilter(x_train)
     @load datadir("exp_pro", "val.jld2") dataset
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
