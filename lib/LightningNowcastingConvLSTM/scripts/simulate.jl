@@ -139,6 +139,7 @@ function simulate(
     STEPS_Y = 10
     n_train = mode == :conditional ? STEPS_X + STEPS_Y : STEPS_X
     train_loader, val_loader = get_dataloaders(batchsize, n_train) |> dev
+    logsystemmetrics(run_info)
     peephole = ntuple(Returns(true), length(use_bias))
     model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 1)
     @save "$(tmp_location)/model_config.jld2" model
