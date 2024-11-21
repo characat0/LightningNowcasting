@@ -69,7 +69,7 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 10 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"' || \
             sleep 20 && ssh -T -o StrictHostKeyChecking=no ${ssh_url} 'echo "SSH connection successful!"'
-            vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/opt/data --api-key=${{ secrets.VAST_API_KEY }}
+            vastai copy ./lib/${{ inputs.subpackage }}/data ${{ steps.launch.outputs.instance_id }}:/data --api-key=${{ secrets.VAST_API_KEY }}
 
   train:
     runs-on: [self-hosted, gpu]
@@ -77,8 +77,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          chmod 777 -R /opt/data
-          cp --no-clobber -r /opt/data ./data
+          ls -lhan .
+          ls -lhan /data
+          chmod 777 -R /data/data
+          cp --no-clobber -r /data/data ./data
           chmod +x ./scripts/train.sh && ./scripts/train.sh
         working-directory: lib/${{ inputs.subpackage }}
 
