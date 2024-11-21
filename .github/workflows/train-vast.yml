@@ -85,7 +85,7 @@ jobs:
           JULIA_NUM_THREADS: auto
           MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
           MLFLOW_TRACKING_USERNAME: lightning
-          MLFLOW_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
 
   cleanup:
     runs-on: [self-hosted, persistent]
