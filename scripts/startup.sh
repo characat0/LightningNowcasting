@@ -42,6 +42,9 @@ sudo -u "$GH_USER" tar xzf "$RUNNER_ARCH"
 echo "https://github.com/$GITHUB_REPOSITORY"
 sudo -u "$GH_USER" ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu --ephemeral --disableupdate
 
+sudo -u "$GH_USER" echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
+sudo -u "$GH_USER" echo "export JULIA_NUM_THREADS=auto" >> ~/.bashrc
+
 # Mark the runner as ready
 touch /root/READY
 
