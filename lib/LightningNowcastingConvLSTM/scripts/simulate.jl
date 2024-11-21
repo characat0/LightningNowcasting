@@ -27,13 +27,13 @@ function logsystemmetrics(run_info)
 end
 
 
-struct MappedArray{A, F}
-    arr::A
+struct MappedArray{T, N, F}
+    arr::AbstractArray{T, N}
     f::F
 end
 
 MLUtils.numobs(arr::MappedArray) = MLUtils.numobs(arr.arr)
-MLUtils.getobs(data::MappedArray, idx) = data.f(data.arr[:, :, :, idx])
+MLUtils.getobs(data::MappedArray{T, N}, idx) where {T, N} = data.f(selectdim(data.arr, N, idx))
 
 function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
     K = ntuple(Returns(0), N - 2)
