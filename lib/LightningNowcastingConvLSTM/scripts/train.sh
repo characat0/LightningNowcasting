@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 sha256sum -c data/SHA256SUMS
 
