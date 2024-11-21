@@ -63,7 +63,7 @@ jobs:
         id: data
         run: |
           tar -czf data.tar.gz -C ./lib/${{ inputs.subpackage }} data
-          key=(curl -F "file=@data.tar.gz" https://file.io | jq .key)
+          key=$(curl -F "file=@data.tar.gz" https://file.io | jq -r .key)
           echo "data_url=https://file.io/$key" >> "$GITHUB_OUTPUT"
 
   train:
