@@ -198,7 +198,7 @@ function simulate(; kwargs...)
     gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
     if length(info) > 0
         @show gpu_info
-        logparam(mlf, gpu_info, info)
+        logparam(mlf, run_info, gpu_info)
     end
 
     if haskey(d, :gitpatch)
