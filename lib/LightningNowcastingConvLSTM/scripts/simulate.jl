@@ -194,20 +194,20 @@ function simulate(; kwargs...)
     run_info = createrun(mlf, experiment; tags=tags)
     @show run_info.info.run_name
     tmpfolder = mktempdir()
-    logsystemmetrics(run_info)
-    gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
-    if length(gpu_info) > 0
-        @show gpu_info
-        logparam(mlf, run_info, gpu_info)
-    end
-
-    if haskey(d, :gitpatch)
-        f = "$(tmpfolder)/head.patch"
-        write(f, d[:gitpatch])
-        logartifact(mlf, run_info, f)
-    end
 
     try
+        logsystemmetrics(run_info)
+        gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
+        if length(gpu_info) > 0
+            @show gpu_info
+            logparam(mlf, run_info, gpu_info)
+        end
+    
+        if haskey(d, :gitpatch)
+            f = "$(tmpfolder)/head.patch"
+            write(f, d[:gitpatch])
+            logartifact(mlf, run_info, f)
+        end
         simulate(run_info; kwargs...)
         updaterun(mlf, run_info, "FINISHED")
     catch e
