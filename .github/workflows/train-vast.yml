@@ -60,7 +60,7 @@ jobs:
       - name: Get GPU info
         id: gpu_info
         run: |
-          info=$(vastai show instance ${{ steps.launch.outputs.instance_id }} --raw | jq -cr 'with_entries(select(.key | startswith("gpu")))')
+          info=$(vastai show instance ${{ steps.launch.outputs.instance_id }} --raw --api-key=${{ secrets.VAST_API_KEY }} | jq -cr 'with_entries(select(.key | startswith("gpu")))')
           echo "gpu_info=$info" >> "$GITHUB_OUTPUT"
       - name: Copy Data
         id: data
