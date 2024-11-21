@@ -79,6 +79,7 @@ jobs:
           ls -lh lib/${{ inputs.subpackage }}/data
       - name: Train
         run: |
+          cat ~/.bashrc
           source ~/.bashrc
           chmod +x ./scripts/train.sh && ./scripts/train.sh
         working-directory: lib/${{ inputs.subpackage }}
