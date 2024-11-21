@@ -35,7 +35,7 @@ echo "https://github.com/$GITHUB_REPOSITORY"
 RUNNER_ALLOW_RUNASROOT=1 ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu --ephemeral --disableupdate
 
 echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
-echo "export JULIA_NUM_THREADS=auto" >> ~/.bashrc
+echo "export JULIA_NUM_THREADS=16" >> ~/.bashrc
 
 echo $(realpath ~/.bashrc)
 cat ~/.bashrc
