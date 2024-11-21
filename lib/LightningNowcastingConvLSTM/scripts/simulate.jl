@@ -6,6 +6,7 @@ using MLUtils, JLD2
 using ConvLSTM, Lux, CUDA, LuxCUDA, Zygote
 using ProgressMeter, MLFlowClient, Plots, Dates, Random, Optimisers, Statistics, DataStructures
 using ImageFiltering
+import Sys
 
 include(srcdir("metrics.jl"))
 
@@ -14,6 +15,16 @@ const mlf = MLFlow()
 const experiment = getorcreateexperiment(mlf, "lux-lightning-4")
 
 const lossfn = BinaryCrossEntropyLoss()
+
+
+function logsystemmetrics(run_info)
+    metrics = Dict(
+        :system_memory_usage_megabytes => (Sys.total_memory() - Sys.free_memory()) / (2 ^ 20),
+        :system_memory_usage_percentage => (1 - Sys.free_memory()/Sys.total_memory()),
+    )
+    metrics = Dict(Symbol("system/", k) => v for (k, v) in metrics)
+    logmetrics(mlf, run_info.info.run_id, metrics)
+end
 
 
 function apply_bilinearfilter(ds::T)::T where {T}
@@ -157,6 +168,7 @@ function simulate(
         # Validation run
         metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
+        logsystemmetrics(run_info)
 
         if ((epoch - 1) % 4 == 0) || (epoch == n_steps) 
             ps_trained, st_trained = (train_state.parameters, train_state.states) |> cpu_device()
@@ -182,6 +194,7 @@ function simulate(; kwargs...)
     run_info = createrun(mlf, experiment; tags=tags)
     @show run_info.info.run_name
     tmpfolder = mktempdir()
+    logsystemmetrics(run_info)
 
     if haskey(d, :gitpatch)
         f = "$(tmpfolder)/head.patch"
