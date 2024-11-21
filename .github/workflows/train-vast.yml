@@ -77,6 +77,7 @@ jobs:
           tar -xzf data.tar.gz
           cp  --no-clobber -r ./data lib/${{ inputs.subpackage }}/data
       - name: Train
+        run: |
           chmod +x ./scripts/train.sh && ./scripts/train.sh
         working-directory: lib/${{ inputs.subpackage }}
 
