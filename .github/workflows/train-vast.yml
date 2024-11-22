@@ -133,9 +133,9 @@ jobs:
     runs-on: [self-hosted, gpu]
     needs: [create_instance, train, first_follow]
     if: ${{ needs.first_follow.outputs.continue_follow == 'true' }}
-    environment: first
+    environment: second
+    steps:
       - name: Last check if exited
-        environment: second
         run-if: env.continue == 'true'
         run: |
           timeout 18000 tmux attach-session -t train
