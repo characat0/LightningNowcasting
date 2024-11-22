@@ -140,7 +140,7 @@ jobs:
           timeout 18000 tmux attach-session -t train
   cleanup:
     runs-on: [self-hosted, persistent]
-    needs: [train, create_instance]
+    needs: [create_instance, last_follow]
     if: always()
     steps:
       - uses: actions/setup-python@v5
