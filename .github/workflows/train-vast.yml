@@ -69,7 +69,7 @@ jobs:
           key=$(curl -F "file=@data.tar.gz" https://file.io | jq -r .key)
           echo "data_url=https://file.io/$key" >> "$GITHUB_OUTPUT"
   train:
-    runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
+    runs-on: [self-hosted, gpu]
     needs: create_instance
     outputs:
       continue_follow: ${{ steps.train.outputs.continue }}
@@ -108,7 +108,7 @@ jobs:
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
   first_follow:
-    runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
+    runs-on: [self-hosted, gpu]
     needs: [create_instance, train]
     if: ${{ needs.train.outputs.continue_follow == 'true' }}
     outputs:
@@ -130,7 +130,7 @@ jobs:
             echo "continue=true" >> "$GITHUB_OUTPUT"
           fi
   last_follow:
-    runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
+    runs-on: [self-hosted, gpu]
     needs: [create_instance, train, first_follow]
     if: ${{ needs.first_follow.outputs.continue_follow == 'true' }}
     environment: first
