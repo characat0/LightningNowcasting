@@ -32,7 +32,7 @@ tar xzf "$RUNNER_ARCH"
 
 # Setup the runner package
 echo "https://github.com/$GITHUB_REPOSITORY"
-RUNNER_ALLOW_RUNASROOT=1 ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu --ephemeral --disableupdate
+RUNNER_ALLOW_RUNASROOT=1 ./config.sh --unattended --url https://github.com/$GITHUB_REPOSITORY --token $GITHUB_ACTIONS_TOKEN --labels gpu --disableupdate
 
 echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
 echo "export JULIA_NUM_THREADS=16" >> ~/.bashrc

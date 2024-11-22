@@ -70,8 +70,10 @@ jobs:
           echo "data_url=https://file.io/$key" >> "$GITHUB_OUTPUT"
 
   train:
-    runs-on: [self-hosted, gpu]
+    runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
     needs: create_instance
+    outputs:
+      continue_follow: ${{ steps.train.outputs.continue }}
     steps:
       - uses: actions/checkout@v4
       - name: Download data
@@ -84,8 +86,20 @@ jobs:
         run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
         working-directory: lib/${{ inputs.subpackage }}
       - name: Train
+        id: train
         run: |
           tmux new-session -d -s train 'bash ./scripts/train.sh; echo \$? > /tmp/tmux_exit_code'
+          timeout 18000 tmux attach-session -t train || echo "Command timed out"
+          if tmux has-session -t train 2>/dev/null; then
+            exit_code=$(cat /tmp/tmux_exit_code)
+            echo "The session ended with exit code: $exit_code"
+            if [ "$exit_code" -ne 0 ]; then
+                echo "Session encountered an error."
+                exit $exit_code
+            fi
+          else
+            echo "continue=true" >> "$GITHUB_OUTPUT"
+          fi
         working-directory: lib/${{ inputs.subpackage }}
         env:
           JULIA_NUM_THREADS: auto
@@ -94,13 +108,19 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
-      - name: Stream output for 10 minutes
-        run: timeout 600 tmux attach-session -t train || echo "Command timed out"
-      - name: First check if exited
-        environment: first
+  first_follow:
+    runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
+    needs: [create_instance, train]
+    if: ${{ needs.train.outputs.continue_follow == 'true' }}
+    outputs:
+      continue_follow: ${{ steps.check.outputs.continue }}
+    environment: first
+    steps:
+      - name: Check if exited
+        id: check
         run: |
+          timeout 18000 tmux attach-session -t train || echo "Command timed out"
           if tmux has-session -t train 2>/dev/null; then
-            tmux attach-session -t train
             exit_code=$(cat /tmp/tmux_exit_code)
             echo "The session ended with exit code: $exit_code"
             if [ "$exit_code" -ne 0 ]; then
@@ -108,14 +128,18 @@ jobs:
                 exit $exit_code
             fi
           else
-            echo "Session has completed"
-            echo "continue=false" >> "$GITHUB_ENV"
+            echo "continue=true" >> "$GITHUB_OUTPUT"
           fi
+  last_follow:
+    runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
+    needs: [create_instance, train, first_follow]
+    if: ${{ needs.first_follow.outputs.continue_follow == 'true' }}
+    environment: first
       - name: Last check if exited
         environment: second
         run-if: env.continue == 'true'
-        run: tmux attach-session -t train
-
+        run: |
+          timeout 18000 tmux attach-session -t train
   cleanup:
     runs-on: [self-hosted, persistent]
     needs: [train, create_instance]
