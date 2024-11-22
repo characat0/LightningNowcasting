@@ -136,7 +136,6 @@ jobs:
     environment: second
     steps:
       - name: Last check if exited
-        run-if: env.continue == 'true'
         run: |
           timeout 18000 tmux attach-session -t train
   cleanup:
