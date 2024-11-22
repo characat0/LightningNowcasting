@@ -88,7 +88,7 @@ jobs:
         id: train
         run: |
           tmux new-session -d -s train 'bash ./scripts/train.sh; echo \$? > /tmp/tmux_exit_code'
-          timeout 18000 tmux attach-session -t train || echo "Command timed out"
+          timeout 18000 script -q -c "tmux attach-session -t train" || echo "Command timed out"
           if tmux has-session -t train 2>/dev/null; then
             exit_code=$(cat /tmp/tmux_exit_code)
             echo "The session ended with exit code: $exit_code"
@@ -118,7 +118,7 @@ jobs:
       - name: Check if exited
         id: check
         run: |
-          timeout 18000 tmux attach-session -t train || echo "Command timed out"
+          timeout 18000 script -q -c "tmux attach-session -t train" || echo "Command timed out"
           if tmux has-session -t train 2>/dev/null; then
             exit_code=$(cat /tmp/tmux_exit_code)
             echo "The session ended with exit code: $exit_code"
@@ -137,7 +137,7 @@ jobs:
     steps:
       - name: Last check if exited
         run: |
-          timeout 18000 tmux attach-session -t train
+          timeout 18000 script -q -c "tmux attach-session -t train"
   cleanup:
     runs-on: [self-hosted, persistent]
     needs: [create_instance, last_follow]
