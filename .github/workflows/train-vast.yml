@@ -68,7 +68,6 @@ jobs:
           tar -czf data.tar.gz -C ./lib/${{ inputs.subpackage }} data
           key=$(curl -F "file=@data.tar.gz" https://file.io | jq -r .key)
           echo "data_url=https://file.io/$key" >> "$GITHUB_OUTPUT"
-
   train:
     runs-on: [self-hosted, gpu, ${{ needs.create_instance.outputs.instance_id }}]
     needs: create_instance
