@@ -139,7 +139,6 @@ function simulate(
     STEPS_Y = 10
     n_train = mode == :conditional ? STEPS_X + STEPS_Y : STEPS_X
     train_loader, val_loader = get_dataloaders(batchsize, n_train) |> dev
-    logsystemmetrics(run_info)
     peephole = ntuple(Returns(true), length(use_bias))
     model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 1)
     @save "$(tmp_location)/model_config.jld2" model
@@ -179,7 +178,6 @@ function simulate(
         # Validation run
         metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
-        logsystemmetrics(run_info)
 
         if ((epoch - 1) % 4 == 0) || (epoch == n_steps) 
             ps_trained, st_trained = (train_state.parameters, train_state.states) |> cpu_device()
@@ -208,7 +206,13 @@ function simulate(; kwargs...)
     logging = parse(Bool, get(ENV, "JULIA_SLOW_PROGRESS_BAR", "false"))
 
     try
-        logsystemmetrics(run_info)
+        timer = Timer(t -> begin
+            try
+                logsystemmetrics(run_info)
+            catch
+                close(t)
+            end
+        end, 5; interval=30)
         gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
         if length(gpu_info) > 0
             @show gpu_info
@@ -221,6 +225,7 @@ function simulate(; kwargs...)
             logartifact(mlf, run_info, f)
         end
         simulate(run_info; logging=logging, kwargs...)
+        close(timer)
         updaterun(mlf, run_info, "FINISHED")
     catch e
         if typeof(e) <: InterruptException

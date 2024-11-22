@@ -85,7 +85,7 @@ jobs:
         working-directory: lib/${{ inputs.subpackage }}
       - name: Train
         run: |
-          source ~/.bashrc && ./scripts/train.sh
+          tmux new-session -d -s train 'bash ./scripts/train.sh; echo \$? > /tmp/tmux_exit_code'
         working-directory: lib/${{ inputs.subpackage }}
         env:
           JULIA_NUM_THREADS: auto
@@ -94,6 +94,27 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
+      - name: Stream output for 10 minutes
+        run: timeout 600 tmux attach-session -t train || echo "Command timed out"
+      - name: First check if exited
+        environment: first
+        run: |
+          if tmux has-session -t train 2>/dev/null; then
+            tmux attach-session -t train
+            exit_code=$(cat /tmp/tmux_exit_code)
+            echo "The session ended with exit code: $exit_code"
+            if [ "$exit_code" -ne 0 ]; then
+                echo "Session encountered an error."
+                exit $exit_code
+            fi
+          else
+            echo "Session has completed"
+            echo "continue=false" >> "$GITHUB_ENV"
+          fi
+      - name: Last check if exited
+        environment: second
+        run-if: env.continue == 'true'
+        run: tmux attach-session -t train
 
   cleanup:
     runs-on: [self-hosted, persistent]
