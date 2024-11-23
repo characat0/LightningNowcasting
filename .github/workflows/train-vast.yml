@@ -14,6 +14,9 @@ on:
         description: Image to be used
         default: "glcr.b-data.ch/julia/ver:1.10.6"
 
+env:
+  TMUX_SESSION_NAME: "train"
+
 jobs:
   create_instance:
     permissions: write-all
@@ -57,6 +60,7 @@ jobs:
           ENV_SUBPACKAGE: ${{ inputs.subpackage }}
           ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
           ENV_GITHUB_REPOSITORY: ${{ github.repository }}
+          ENV_TMUX_SESSION_NAME: ${{ env.TMUX_SESSION_NAME }}
       - name: Get GPU info
         id: gpu_info
         run: |
@@ -87,7 +91,7 @@ jobs:
       - name: Train
         id: train
         run: |
-          tmux new-session -d -s train 'bash ./scripts/train.sh; echo \$? > /tmp/tmux_exit_code'
+          tmux new-session -d -s $TMUX_SESSION_NAME 'bash source ~/.bashrc && ./scripts/train.sh; echo \$? > /tmp/tmux_exit_code'
           timeout 18000 script -q -c "tmux attach-session -t train" || echo "Command timed out"
           if tmux has-session -t train 2>/dev/null; then
             exit_code=$(cat /tmp/tmux_exit_code)
