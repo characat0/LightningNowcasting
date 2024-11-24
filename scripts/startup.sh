@@ -33,6 +33,12 @@ pip install vastai
 
 # Remove tmux
 touch ~/.no_auto_tmux;
+if [ -n "$TMUX" ]; then
+  echo "This is running inside tmux."
+else
+  echo "This is not running inside tmux."
+fi
+unset TMUX;
 
 
 # Create runner directory
@@ -62,11 +68,6 @@ touch /root/READY
 
 # Setup the runner package
 RUNNER_ALLOW_RUNASROOT=1 ./run.sh
-
-if [ -z "$" ]; then
-  echo "Usage: $0 <session-name>"
-  exit 1
-fi
 
 while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
   sleep 600  # Wait for 10 minutes before checking again
