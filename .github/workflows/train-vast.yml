@@ -91,8 +91,8 @@ jobs:
       - name: Train
         id: train
         run: |
-          tmux new-session -d -s $TMUX_SESSION_NAME 'bash --rcfile=~/.bashrc ./scripts/train.sh'
-          timeout 7200 tmux attach-session -t $TMUX_SESSION_NAME || echo "Command finished with timeout"
+          tmux new-session -d -s $TMUX_SESSION_NAME 'bash --rcfile=~/.bashrc ./scripts/train.sh > /tmp/${TMUX_SESSION_NAME}.log'
+          timeout 7200 tail -f /tmp/$TMUX_SESSION_NAME.log || echo "Command finished with timeout"
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
           else
