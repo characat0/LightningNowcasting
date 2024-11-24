@@ -8,11 +8,6 @@ import sys
 
 key = os.getenv('VAST_API_KEY')
 assert key is not None, "missing vast api key"
-repo = os.getenv('REPO_NAME')
-assert repo is not None, "missing repository url"
-subpackage = os.getenv('SUBPACKAGE')
-assert subpackage is not None, "missing subpackage"
-mlflow_password = os.getenv('MLFLOW_PASSWORD')
 
 env = os.environ
 
@@ -64,6 +59,9 @@ def launch_action_runner_with_gpu():
     instance_id = response['new_contract']
     set_output('instance_id', instance_id)
 
+
+def wait_for_instance():
+    instance_id = os.getenv("INSTANCE_ID")
     start_time = datetime.datetime.now()
     while (status := check_status(instance_id)) in ['LOADING', 'UNKNOWN']:
         now = datetime.datetime.now()
@@ -81,3 +79,5 @@ def launch_action_runner_with_gpu():
 
 if sys.argv[1] == 'LAUNCH_INSTANCE':
     launch_action_runner_with_gpu()
+elif sys.argv[1] == 'WAIT_INSTANCE':
+    wait_for_instance()

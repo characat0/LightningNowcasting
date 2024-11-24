@@ -21,7 +21,7 @@ jobs:
   create_instance:
     permissions: write-all
     runs-on: [self-hosted, persistent]
-    timeout-minutes: 5
+    timeout-minutes: 15
     outputs:
       instance_id: ${{ steps.launch.outputs.instance_id }}
       data_url: ${{ steps.data.outputs.data_url }}
@@ -61,17 +61,23 @@ jobs:
           ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
           ENV_GITHUB_REPOSITORY: ${{ github.repository }}
           ENV_TMUX_SESSION_NAME: ${{ env.TMUX_SESSION_NAME }}
-      - name: Get GPU info
-        id: gpu_info
-        run: |
-          info=$(vastai show instance ${{ steps.launch.outputs.instance_id }} --raw --api-key=${{ secrets.VAST_API_KEY }} | jq -cr 'with_entries(select(.key | startswith("gpu")))')
-          echo "gpu_info=$info" >> "$GITHUB_OUTPUT"
       - name: Copy Data
         id: data
         run: |
           tar -czf data.tar.gz -C ./lib/${{ inputs.subpackage }} data
           key=$(curl -F "file=@data.tar.gz" https://file.io | jq -r .key)
           echo "data_url=https://file.io/$key" >> "$GITHUB_OUTPUT"
+      - name: Wait until ready
+        id: wait
+        run: python scripts/train.py WAIT_INSTANCE
+        env:
+          INSTANCE_ID: ${{ steps.launch.outputs.instance_id }}
+          VAST_API_KEY: ${{ secrets.VAST_API_KEY }}
+      - name: Get GPU info
+        id: gpu_info
+        run: |
+          info=$(vastai show instance ${{ steps.launch.outputs.instance_id }} --raw --api-key=${{ secrets.VAST_API_KEY }} | jq -cr 'with_entries(select(.key | startswith("gpu")))')
+          echo "gpu_info=$info" >> "$GITHUB_OUTPUT"
   train:
     runs-on: [self-hosted, gpu]
     needs: create_instance
