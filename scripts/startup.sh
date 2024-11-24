@@ -2,6 +2,8 @@
 
 # Vast.AI setup
 
+# Prepare to kill myself
+trap 'vastai destroy instance $INSTANCE_ID' EXIT
 
 # Define variables
 RUNNER_VERSION="2.320.0"
@@ -29,9 +31,6 @@ sudo apt-get install -y curl tar wget coreutils git tree python3-pip
 
 pip install vastai
 
-vastai destroy instance $INSTANCE_ID
-
-
 # Remove tmux
 touch ~/.no_auto_tmux;
 
@@ -44,6 +43,8 @@ cd "$RUNNER_DIR"
 # Download the runner package
 echo "Downloading GitHub Actions runner version $RUNNER_VERSION..."
 curl -o "$RUNNER_ARCH" -L "$RUNNER_URL"
+
+# Check hash for integrity
 echo "93ac1b7ce743ee85b5d386f5c1787385ef07b3d7c728ff66ce0d3813d5f46900  $RUNNER_ARCH" | shasum -a 256 -c
 tar xzf "$RUNNER_ARCH"
 
@@ -55,8 +56,6 @@ echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
 echo "export JULIA_NUM_THREADS=16" >> ~/.bashrc
 echo "export JULIA_SLOW_PROGRESS_BAR=true">> ~/.bashrc
 
-echo $(realpath ~/.bashrc)
-cat ~/.bashrc
 
 # Mark the runner as ready
 touch /root/READY
@@ -70,11 +69,9 @@ if [ -z "$" ]; then
 fi
 
 while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
-  sleep 1  # Wait for 1 second before checking again
+  sleep 600  # Wait for 10 minutes before checking again
+  echo "$(date) - Running..."
 done
 
 echo "Session '$TMUX_SESSION_NAME' has ended."
-
-# Kill myself
-vastai destroy instance $INSTANCE_ID
 

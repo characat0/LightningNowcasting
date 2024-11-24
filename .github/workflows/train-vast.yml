@@ -76,7 +76,7 @@ jobs:
     runs-on: [self-hosted, gpu]
     needs: create_instance
     outputs:
-      continue_follow: ${{ steps.train.outputs.continue }}
+      finished: ${{ steps.train.finished }}
     steps:
       - uses: actions/checkout@v4
       - name: Download data
@@ -91,17 +91,12 @@ jobs:
       - name: Train
         id: train
         run: |
-          tmux new-session -d -s $TMUX_SESSION_NAME 'bash source ~/.bashrc && ./scripts/train.sh; echo \$? > /tmp/tmux_exit_code'
-          timeout 18000 script -q -c "tmux attach-session -t train" || echo "Command timed out"
-          if tmux has-session -t train 2>/dev/null; then
-            exit_code=$(cat /tmp/tmux_exit_code)
-            echo "The session ended with exit code: $exit_code"
-            if [ "$exit_code" -ne 0 ]; then
-                echo "Session encountered an error."
-                exit $exit_code
-            fi
+          tmux new-session -d -s $TMUX_SESSION_NAME 'bash --rcfile=~/.bashrc ./scripts/train.sh'
+          timeout 120m tmux attach-session -t train || "Command timeout"
+          if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
+            echo "finished=false" >> "$GITHUB_OUTPUT"
           else
-            echo "continue=true" >> "$GITHUB_OUTPUT"
+            echo "finished=true" >> "$GITHUB_OUTPUT"
           fi
         working-directory: lib/${{ inputs.subpackage }}
         env:
@@ -111,40 +106,11 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
-  first_follow:
-    runs-on: [self-hosted, gpu]
-    needs: [create_instance, train]
-    if: ${{ needs.train.outputs.continue_follow == 'true' }}
-    outputs:
-      continue_follow: ${{ steps.check.outputs.continue }}
-    environment: first
-    steps:
-      - name: Check if exited
-        id: check
-        run: |
-          timeout 18000 script -q -c "tmux attach-session -t train" || echo "Command timed out"
-          if tmux has-session -t train 2>/dev/null; then
-            exit_code=$(cat /tmp/tmux_exit_code)
-            echo "The session ended with exit code: $exit_code"
-            if [ "$exit_code" -ne 0 ]; then
-                echo "Session encountered an error."
-                exit $exit_code
-            fi
-          else
-            echo "continue=true" >> "$GITHUB_OUTPUT"
-          fi
-  last_follow:
-    runs-on: [self-hosted, gpu]
-    needs: [create_instance, train, first_follow]
-    if: ${{ needs.first_follow.outputs.continue_follow == 'true' }}
-    environment: second
-    steps:
-      - name: Last check if exited
-        run: |
-          timeout 18000 script -q -c "tmux attach-session -t train"
   cleanup:
     runs-on: [self-hosted, persistent]
-    needs: [create_instance, last_follow]
+    needs: [create_instance, train]
+    environment: 
+      name: ${{ needs.train.outputs.finished == 'false' && 'killer' || 'quick_shot' }}
     if: always()
     steps:
       - uses: actions/setup-python@v5
@@ -154,4 +120,3 @@ jobs:
         run: |
           pip install vastai==0.2.6
           vastai destroy instance "${{ needs.create_instance.outputs.instance_id }}" --api-key=${{ secrets.VAST_API_KEY }}
-
