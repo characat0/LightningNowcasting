@@ -95,8 +95,11 @@ jobs:
           sleep 10
           cat /tmp/$TMUX_SESSION_NAME.log
           echo "======================== FINISH ========================"
+          export COLUMNS=80
+          export LINES=24
+          stty cols $COLUMNS rows $LINES
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
-            timeout 120m tmux attach-session -t train || echo "Command finished with timeout"
+            timeout 120m script -q -c "tmux attach-session -t train" /dev/null || echo "Command finished with timeout"
           fi
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
