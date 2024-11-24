@@ -91,6 +91,7 @@ jobs:
       - name: Train
         id: train
         run: |
+          source ~/.bashrc
           tmux new-session -d -s $TMUX_SESSION_NAME 'bash --rcfile=~/.bashrc ./scripts/train.sh'
           timeout 120m tmux attach-session -t train || "Command timeout"
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
@@ -113,6 +114,9 @@ jobs:
       name: ${{ needs.train.outputs.finished == 'false' && 'killer' || 'quick_shot' }}
     if: always()
     steps:
+      - uses: GuillaumeFalourd/wait-sleep-action@v1
+        with:
+          time: 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
