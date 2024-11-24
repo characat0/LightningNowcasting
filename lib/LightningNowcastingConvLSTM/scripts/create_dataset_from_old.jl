@@ -21,7 +21,7 @@ function uint8_filter(chunk, k)
     chunk = chunk / Float32(255)
     res = imfilter(chunk, k)
     res .= max.(chunk, res)
-    ceil.(UInt8, res * Float32(255))
+    floor.(UInt8, res * Float32(255))
 end
 
 function augment(rng, ds, n_empty=0)
@@ -35,11 +35,37 @@ function augment(rng, ds, n_empty=0)
     output
 end
 
-dataset = augment(Xoshiro(42), train, 2_000)
+function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
+    K = ntuple(Returns(0), N - 2)
+    k = Float32.(Kernel.gaussian((sigma, sigma, K...)))
+    f = Base.Fix2(uint8_filter, k)
+    f(ds)
+    # MappedArray(ds, f)
+end
 
-@info "number of samples for train: $(size(dataset, 4))"
+function apply_bilinearfilter(ds::AbstractArray{T, N}) where {T, N}
+    K = ntuple(Returns(1), N - 2)
+    k_org = reshape([1 2 1; 2 4 2; 1 2 1], (3, 3, K...))
+    k = centered(k_org / Float32(sum(k_org)))
+    f = Base.Fix2(uint8_filter, k)
+    f(ds)
+    # MappedArray(ds, f)
+end
 
-@save datadir("exp_pro", "train.jld2") {compress=true} dataset lat lon time
+N_X = 10
+
+@info "Applying gaussian filters"
+
+dataset_x = apply_gaussian_filter(train, 2)
+dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], .9)
+
+dataset_x = augment(Xoshiro(42), dataset_x, 2_000)
+dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
+
+
+@info "number of samples for train: $(size(dataset_x, 4))"
+
+@save datadir("exp_pro", "train.jld2") {compress=true} dataset_x dataset_y lat lon time
 
 dataset = augment(Xoshiro(42), val, 200)
 

@@ -17,11 +17,52 @@ const experiment = getorcreateexperiment(mlf, "lux-lightning-4")
 const lossfn = BinaryCrossEntropyLoss()
 
 
+function get_temperature(device::CUDA.NVML.Device=first(CUDA.NVML.devices()))
+    temp = Ref{UInt32}()
+    NVML.nvmlDeviceGetTemperature(device, CUDA.NVML.NVML_TEMPERATURE_GPU, temp)
+    return Int(temp[])
+end
+
+function get_power_usage(nvml_device::NVML.Device=first(CUDA.NVML.devices()))
+    power = Ref{UInt32}()
+    NVML.nvmlDeviceGetPowerUsage(nvml_device, power)
+    return round(power[] * 1e-3; digits=2)
+end
+
+function get_power_limit(nvml_device::NVML.Device=first(CUDA.NVML.devices()))
+    power_limit = Ref{UInt32}()
+    NVML.nvmlDeviceGetEnforcedPowerLimit(nvml_device, power_limit)
+    return round(power_limit[] * 1e-3; digits=2)
+end
+
+function get_gpu_utilization(nvml_device::NVML.Device=first(CUDA.NVML.devices()))
+    util = Ref{NVML.nvmlUtilization_t}()
+    NVML.nvmlDeviceGetUtilizationRates(nvml_device, util)
+    return (compute=Int(util[].gpu), mem=Int(util[].memory))
+end
+
 function logsystemmetrics(run_info)
-    metrics = Dict(
-        :system_memory_usage_megabytes => (Sys.total_memory() - Sys.free_memory()) / (2 ^ 20),
+    function get_gpu_utilization(nvml_device::NVML.Device=first(CUDA.NVML.devices()))
+        util = Ref{NVML.nvmlUtilization_t}()
+        NVML.nvmlDeviceGetUtilizationRates(nvml_device, util)
+        return (compute=Int(util[].gpu), mem=Int(util[].memory))
+    end
+    metrics = Dict{Symbol, Real}(
+        :system_memory_usage_megabytes => (Sys.total_memory() - Sys.free_memory()) / (1024 ^ 2),
         :system_memory_usage_percentage => (1 - Sys.free_memory()/Sys.total_memory()),
+        :gpu_memory_usage_megabytes => (CUDA.total_memory() - CUDA.free_memory()) / (1024 ^ 2),
+        :gpu_memory_usage_percentage => (1 - CUDA.free_memory()/CUDA.total_memory()),
+
     )
+    try #  Get NVML metrics
+        metrics[:gpu_power_usage_watts] = get_power_usage()
+        metrics[:gpu_power_usage_percentage] = metrics[:gpu_power_usage_watts]/get_power_limit()
+        utilization = get_gpu_utilization()
+        metrics[:gpu_utilization_percentage] = utilization.compute
+        metrics[:gpu_utilization_percentage_mem] = utilization.mem
+    catch
+    end
+
     metrics = Dict(Symbol("system/", k) => v for (k, v) in metrics)
     logmetrics(mlf, run_info.info.run_id, metrics)
 end
@@ -52,17 +93,18 @@ end
 
 
 function get_dataloaders(batchsize, n_train)
-    @load datadir("exp_pro", "train.jld2") dataset
-    @show "Loaded training set"
-    train = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_train, y_train) = reshape(@view(train[:, :, begin:n_train, :]), size(train)[1:2]..., 1, n_train, :), @view(train[:, :, 11:20, :])
-    @show "Splitted between x and y"
+    @load datadir("exp_pro", "train.jld2") dataset_x dataset_y
+    @info "Loaded training set"
+    train_x = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
+    y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
+    x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
+    @info "Splitted between x and y"
     y_train = apply_gaussian_filter(y_train, 1);
     x_train = apply_bilinearfilter(x_train);
     @load datadir("exp_pro", "val.jld2") dataset
-    @show "Loaded validation set"
+    @info "Loaded validation set"
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_val, y_val) = reshape(val[:, :, 1:10, :], size(train)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
+    (x_val, y_val) = reshape(val[:, :, 1:10, :], size(val)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
 
     return (
         DataLoader((x_train, y_train); batchsize),
@@ -163,9 +205,9 @@ function simulate(
     ))
     train_state = Training.TrainState(model, ps, st, opt)
     @info "Starting train"
+    dt = logging ? 20*60.0 : 1.0
     for epoch in 1:n_steps
         losses = Float32[]
-        dt = logging ? 20*60.0 : 0.1
         progress = Progress(length(train_loader); dt=dt, desc="Training Epoch $(epoch)", barlen=32)
         for (x, y) in train_loader
             (_, loss, _, train_state) = Training.single_train_step!(
@@ -204,6 +246,7 @@ function simulate(; kwargs...)
     @show run_info.info.run_name
     tmpfolder = mktempdir()
     logging = parse(Bool, get(ENV, "JULIA_SLOW_PROGRESS_BAR", "false"))
+    @show get(ENV, "JULIA_SLOW_PROGRESS_BAR", missing)
 
     try
         timer = Timer(t -> begin
