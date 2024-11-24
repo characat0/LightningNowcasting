@@ -101,13 +101,13 @@ jobs:
           export LINES=24
           tmux new-session -d -s $TMUX_SESSION_NAME 'source ~/.bashrc && bash ./scripts/train.sh | tee /tmp/$TMUX_SESSION_NAME.log'
           sleep 10
-          echo "======================== START ========================"
+          echo "================ START ================="
           cat /tmp/$TMUX_SESSION_NAME.log
-          echo "======================== FINISH ========================"
+          echo "================ FINISH ================="
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             tmux set-option -t "$TMUX_SESSION_NAME" status off
             tmux resize-pane -t "$TMUX_SESSION_NAME" -Z
-            timeout 120m script -q/dev/null -c "tmux attach-session -t train" || echo "Command finished with timeout"
+            timeout 120m script -q /dev/null -c "tmux attach-session -t train" || echo "Command finished with timeout"
           fi
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
