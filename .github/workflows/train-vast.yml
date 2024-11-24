@@ -114,9 +114,6 @@ jobs:
       name: ${{ needs.train.outputs.finished == 'false' && 'killer' || 'quick_shot' }}
     if: always()
     steps:
-      - uses: GuillaumeFalourd/wait-sleep-action@v1
-        with:
-          time: 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
