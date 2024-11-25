@@ -135,9 +135,7 @@ jobs:
         id: train
         run: |
           TEMP_LOG_FILE=/tmp/train.log
-          nohup stdbuf -i0 -o0 -e0 ./scripts/train.sh &> "$TEMP_LOG_FILE" & 
-          SCRIPT_PID=$!
-          disown $SCRIPT_PID || true
+          tmux new-session -s train_session "stdbuf -i0 -o0 -e0 ./scripts/train.sh &> \"$TEMP_LOG_FILE\""
           tail -f "$TEMP_LOG_FILE" &
           start_time=$(date +%s)
           time_limit=1200
