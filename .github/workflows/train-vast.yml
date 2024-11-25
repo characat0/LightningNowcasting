@@ -134,6 +134,7 @@ jobs:
       - name: Train
         id: train
         run: |
+          TEMP_LOG_FILE=/tmp/train.log
           nohup ./scripts/train.sh &> "$TEMP_LOG_FILE" & tail -f "$TEMP_LOG_FILE" &
           start_time=$(date +%s)
           time_limit=1200
