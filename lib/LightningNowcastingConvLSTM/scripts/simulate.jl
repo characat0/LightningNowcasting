@@ -305,6 +305,13 @@ type_converter = [
     ("mode", Symbol),
     ("hidden", Tuple),
     ("use_bias", Tuple),
+    ("k_x", Base.Fix1(parse, Int)),
+    ("k_h", Base.Fix1(parse, Int)),
+    ("seed", Base.Fix1(parse, Int)),
+    ("n_steps", Base.Fix1(parse, Int)),
+    ("batchsize", Base.Fix1(parse, Int)),
+    ("eta", Base.Fix1(parse, Float64)),
+    ("rho", Base.Fix1(parse, Float64)),
 ]
 
 for (k, f) in type_converter
