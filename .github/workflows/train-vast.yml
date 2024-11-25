@@ -134,9 +134,9 @@ jobs:
       - name: Train
         id: train
         run: |
-          tmux new-session -d -s $TMUX_SESSION_NAME 'source ~/.bashrc && bash -c "trap \"rm -f /tmp/$TMUX_SESSION_NAME.log\" EXIT; bash ./scripts/train.sh | tee /tmp/$TMUX_SESSION_NAME.log"'
+          tmux new-session -d -s $TMUX_SESSION_NAME 'source ~/.bashrc && bash -c "trap \"sleep 2; rm -f /tmp/$TMUX_SESSION_NAME.log\" EXIT; bash ./scripts/train.sh | tee /tmp/$TMUX_SESSION_NAME.log"'
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
-            (timeout 120m tail -f /tmp/$TMUX_SESSION_NAME.log) || echo "Session exited"
+            (timeout 120m tail -f /tmp/$TMUX_SESSION_NAME.log && echo "Session finished") || echo "Session exited or timed out"
           fi
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
