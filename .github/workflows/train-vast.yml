@@ -148,7 +148,7 @@ jobs:
         run: |
           tail -f /tmp/train.log &
           start_time=$(date +%s)
-          time_limit=1200
+          time_limit=7200
           while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
             current_time=$(date +%s)  # Get current time in seconds since epoch
             elapsed=$((current_time - start_time))
