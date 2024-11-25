@@ -120,9 +120,11 @@ jobs:
       finished: ${{ steps.train.finished }}
     steps:
       - uses: actions/checkout@v4
-      - name: Download data
+      - name: Prepare (Download data and instantiate Julia)
         run: |
-          curl -o data.tar.gz ${{ needs.create_instance.outputs.data_url }}
+          curl -o data.tar.gz ${{ needs.create_instance.outputs.data_url }} &
+          (cd lib/${{ inputs.subpackage }} && julia --project=. -e 'import Pkg; Pkg.instantiate()') &
+          wait
           tar -xzf data.tar.gz
           cp  --no-clobber -r ./data/* lib/${{ inputs.subpackage }}/data
           tree -hau -L 4 lib/${{ inputs.subpackage }}/data
