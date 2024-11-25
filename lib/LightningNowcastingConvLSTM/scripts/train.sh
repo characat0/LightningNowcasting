@@ -1,4 +1,5 @@
 #!/bin/bash
+trap 'touch ~/FINISHED' EXIT
 
 sha256sum -c data/SHA256SUMS
 

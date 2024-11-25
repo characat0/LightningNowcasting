@@ -70,10 +70,10 @@ touch /root/READY
 # Setup the runner package
 RUNNER_ALLOW_RUNASROOT=1 ./run.sh
 
-while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
-  sleep 600  # Wait for 10 minutes before checking again
+while [[ ! -f ~/FINISHED ]]; do
+  sleep 10m  # Wait for 10 minutes before checking again
   echo "$(date) - Running..."
 done
 
-echo "Session '$TMUX_SESSION_NAME' has ended."
+echo "Command has finished."
 
