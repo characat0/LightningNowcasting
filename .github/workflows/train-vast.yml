@@ -144,7 +144,7 @@ jobs:
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             tmux set-option -t "$TMUX_SESSION_NAME" status off
             tmux resize-pane -t "$TMUX_SESSION_NAME" -Z
-            timeout 120m script -q /dev/null -c "tmux attach-session -t train" || echo "Command finished with timeout"
+            timeout 1m script -q /dev/null -c "tmux attach-session -t TMUX_SESSION_NAME" || tmux detach-client -s TMUX_SESSION_NAME && echo "Session detached after timeout"
           fi
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"

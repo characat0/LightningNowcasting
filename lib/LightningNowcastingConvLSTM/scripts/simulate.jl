@@ -289,6 +289,7 @@ eta = 3e-3
 b = (false, true, true)
 
 hyperparams = JSON.parse(get(ENV, "TRAIN_HYPERPARAMETERS", "{}"))
+hyperparams = Dict(Symbol(k) => v for (k, v) in hyperparams)
 
 # list
 # k_x
@@ -323,6 +324,7 @@ for (k, f) in type_converter
         @warn e
     end
 end
+
 
 @info "Parsed Hyperparameters" hyperparams
 
