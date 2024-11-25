@@ -288,16 +288,44 @@ h = 64
 eta = 3e-3
 b = (false, true, true)
 
+hyperparams = JSON.parse(get(ENV, "TRAIN_HYPERPARAMETERS", "{}"))
+
+# list
+# k_x
+# k_h
+# hidden
+# seed
+# eta
+# rho
+# n_steps
+# batchsize
+# mode
+
+type_converter = [
+    ("mode", Symbol),
+    ("hidden", Tuple),
+    ("use_bias", Tuple),
+]
+
+for (k, f) in type_converter
+    hyperparams[k] = f(hyperparams[k])
+end
+
+
+mandatory_names = [
+    :k_h,
+    :k_x,
+    :hidden,
+    :seed,
+    :eta,
+    :rho,
+    :n_steps,
+    :batchsize,
+    :use_bias,
+    :mode,
+]
+
 simulate(;
-    k_h=5,
-    k_x=5,
-    hidden=(h, h÷2, h÷2),
-    seed=42,
-    eta=eta,
-    rho=0.9,
-    n_steps=20,
-    batchsize=16,
-    use_bias=b,
-    mode=:conditional,
+    hyperparams...
 )
 

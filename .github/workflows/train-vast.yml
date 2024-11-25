@@ -13,14 +13,60 @@ on:
       image_name:
         description: Image to be used
         default: "glcr.b-data.ch/julia/ver:1.10.6"
+      hyperparameter_k_h:
+        description: Kernel size for hidden to hidden transition
+        default: "5"
+      hyperparameter_k_x:
+        description: Kernel size for input to hidden transition
+        default: "5"
+      hyperparameter_hidden:
+        description: Number of hidden channels in each convlstm layer
+        default: "[64, 32, 32]"
+      hyperparameter_seed:
+        description: Seed for Xoshiro number generator
+        default: "42" # Why not
+      hyperparameter_eta:
+        description: Eta for the Optimiser
+        default: "3e-3"
+      hyperparameter_rho:
+        description: Rho parameter of the Optimiser (used on RMSProp)
+        default: "0.9"
+      hyperparameter_n_steps:
+        description: Number of epochs to run optimization on
+        default: "20"
+      hyperparameter_batchsize:
+        description: Number of sequences to include in a minibatch for training (and validation)
+        default: "16"
+      hyperparameter_use_bias:
+        description: Wether to use or not bias in each convlstm layer
+        default: "[true, false, false]"
+      hyperparameter_mode:
+        description: Mode for the ConvLSTM encoder-decoder, can be "conditional" or "generative", conditional model uses teaching forcing
+        default: "conditional"
+      extra_hyperparameters:
+        description: Extra hyperparameters in JSON format
+        default: '{}'
 
 env:
   TMUX_SESSION_NAME: "train"
 
 jobs:
+  hyperparameters:
+    runs-on: [self-hosted, persistent]
+    outputs:
+      hyperparameters: ${{ steps.hyperparameters.outputs.hyperparameters }}
+    steps:
+      - id: hyperparameters
+        run: |
+          echo "${{ inputs }}"
+          hyperparameters=$(echo "${{ inputs }}" | jq -cr 'with_entries(select(.key | startswith("hyperparameter_")) | .key |= sub("^hyperparameter_"; ""))')
+          final_hyperparameters=$(echo "$hyperparameters ${{ inputs.extra_hyperparameters }}" | jq -crs add)
+          echo "$final_hyperparameters"
+          echo "hyperparameters=$final_hyperparameters" >> "$GITHUB_OUTPUT"
   create_instance:
     permissions: write-all
     runs-on: [self-hosted, persistent]
+    needs: hyperparameters
     timeout-minutes: 15
     outputs:
       instance_id: ${{ steps.launch.outputs.instance_id }}
@@ -81,7 +127,7 @@ jobs:
           echo "gpu_info=$info" >> "$GITHUB_OUTPUT"
   train:
     runs-on: [self-hosted, gpu]
-    needs: create_instance
+    needs: [create_instance, hyperparameters]
     outputs:
       finished: ${{ steps.train.finished }}
     steps:
@@ -123,6 +169,7 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
+          TRAIN_HYPERPARAMETERS: ${{ needs.hyperparameters.outputs.hyperparameters }}
   cleanup:
     runs-on: [self-hosted, persistent]
     needs: [create_instance, train]
