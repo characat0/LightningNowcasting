@@ -136,15 +136,9 @@ jobs:
         run: |
           export COLUMNS=80
           export LINES=24
-          tmux new-session -d -s $TMUX_SESSION_NAME 'source ~/.bashrc && bash ./scripts/train.sh | tee /tmp/$TMUX_SESSION_NAME.log'
-          sleep 10
-          echo "================ START ================"
-          cat /tmp/$TMUX_SESSION_NAME.log
-          echo "================ FINISH ================"
+          tmux new-session -d -s $TMUX_SESSION_NAME 'source ~/.bashrc && bash ./scripts/train.sh | tee /tmp/$TMUX_SESSION_NAME.log; trap "rm -f /tmp/$TMUX_SESSION_NAME.log" EXIT'
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
-            tmux set-option -t "$TMUX_SESSION_NAME" status off
-            tmux resize-pane -t "$TMUX_SESSION_NAME" -Z
-            timeout 1m script -q /dev/null -c "tmux attach-session -t TMUX_SESSION_NAME" || tmux detach-client -s TMUX_SESSION_NAME && echo "Session detached after timeout"
+            (timeout 120m tail -f tee /tmp/$TMUX_SESSION_NAME.log) || echo "Session exited"
           fi
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
