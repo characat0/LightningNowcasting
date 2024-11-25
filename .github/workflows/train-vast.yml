@@ -146,7 +146,7 @@ jobs:
       - name: Wait and log
         id: train
         run: |
-          tail -f "$TEMP_LOG_FILE" &
+          tail -f /tmp/train.log &
           start_time=$(date +%s)
           time_limit=1200
           while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
