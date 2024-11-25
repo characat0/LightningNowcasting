@@ -303,8 +303,8 @@ hyperparams = JSON.parse(get(ENV, "TRAIN_HYPERPARAMETERS", "{}"))
 
 type_converter = [
     ("mode", Symbol),
-    ("hidden", Tuple),
-    ("use_bias", Tuple),
+    ("hidden", (Tuple ∘ JSON.parse)),
+    ("use_bias", (Tuple ∘ JSON.parse)),
     ("k_x", Base.Fix1(parse, Int)),
     ("k_h", Base.Fix1(parse, Int)),
     ("seed", Base.Fix1(parse, Int)),
