@@ -62,10 +62,12 @@ echo "export PATH=\$PATH:/usr/local/julia/bin/" >> ~/.bashrc
 echo "export JULIA_NUM_THREADS=16" >> ~/.bashrc
 echo "export JULIA_SLOW_PROGRESS_BAR=true" >> ~/.bashrc
 echo "export JULIA_CUDA_SOFT_MEMORY_LIMIT=90%" >> ~/.bashrc
+source ~/.bashrc
 
 
 # Mark the runner as ready
-touch /root/READY
+touch ~/READY
+
 
 # Setup the runner package
 RUNNER_ALLOW_RUNASROOT=1 ./run.sh
