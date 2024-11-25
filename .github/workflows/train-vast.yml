@@ -34,7 +34,8 @@ jobs:
       - run: |
           pip install vastai==0.2.6
       - name: Prepare
-        run: cd lib/${{ inputs.subpackage }} && chmod +x ./scripts/prepare.sh && type ./scripts/prepare.sh && ./scripts/prepare.sh
+        run: ./scripts/prepare.sh
+        working-directory: lib/${{ inputs.subpackage }}
       - name: Get Runner Token
         id: get_runner_token
         run: |
