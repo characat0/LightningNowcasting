@@ -135,7 +135,10 @@ jobs:
         id: train
         run: |
           TEMP_LOG_FILE=/tmp/train.log
-          nohup stdbuf -i0 -o0 -e0 ./scripts/train.sh &> "$TEMP_LOG_FILE" & tail -f "$TEMP_LOG_FILE" &
+          nohup stdbuf -i0 -o0 -e0 ./scripts/train.sh &> "$TEMP_LOG_FILE" & 
+          SCRIPT_PID=$!
+          disown $SCRIPT_PID || true
+          tail -f "$TEMP_LOG_FILE" &
           start_time=$(date +%s)
           time_limit=1200
           while [[ ! -f ~/FINISHED ]]; do
