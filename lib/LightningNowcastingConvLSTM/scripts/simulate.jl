@@ -314,23 +314,18 @@ type_converter = [
     ("rho", Base.Fix1(parse, Float64)),
 ]
 
+@info "Raw Hyperparameters" hyperparams
+
 for (k, f) in type_converter
-    hyperparams[k] = f(hyperparams[k])
+    try
+        hyperparams[k] = f(hyperparams[k])
+    catch e
+        @warn e
+    end
 end
 
+@info "Parsed Hyperparameters" hyperparams
 
-mandatory_names = [
-    :k_h,
-    :k_x,
-    :hidden,
-    :seed,
-    :eta,
-    :rho,
-    :n_steps,
-    :batchsize,
-    :use_bias,
-    :mode,
-]
 
 simulate(;
     hyperparams...
