@@ -135,7 +135,7 @@ jobs:
         id: train
         run: |
           TEMP_LOG_FILE=/tmp/train.log
-          nohup ./scripts/train.sh &> "$TEMP_LOG_FILE" & tail -f "$TEMP_LOG_FILE" &
+          nohup stdbuf -i0 -o0 -e0 ./scripts/train.sh &> "$TEMP_LOG_FILE" & tail -f "$TEMP_LOG_FILE" &
           start_time=$(date +%s)
           time_limit=1200
           while [[ ! -f ~/FINISHED ]]; do
@@ -144,7 +144,7 @@ jobs:
             if (( elapsed >= time_limit )); then
               break
             fi
-            sleep 1m
+            sleep 10
           done
           if [[ ! -f ~/FINISHED ]]; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
