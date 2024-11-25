@@ -22,30 +22,18 @@ on:
       hyperparameter_hidden:
         description: "# of hidden channels per layer"
         default: "[64, 32, 32]"
-      hyperparameter_seed:
-        description: Seed for Xoshiro number generator
-        default: "42" # Why not
       hyperparameter_eta:
         description: Eta for the Optimiser
         default: "3e-3"
-      hyperparameter_rho:
-        description: Rho of the Optimiser (RMSProp)
-        default: "0.9"
-      hyperparameter_n_steps:
-        description: Number of epochs
-        default: "20"
       hyperparameter_batchsize:
         description: Minibatch size
         default: "16"
       hyperparameter_use_bias:
         description: Bias term per layer
         default: "[true, false, false]"
-      hyperparameter_mode:
-        description: Model configuration ("conditional" or "generative")
-        default: "conditional"
       extra_hyperparameters:
         description: Extra hyperparameters in JSON format
-        default: '{}'
+        default: '{"n_steps": 20, "seed": 42, "rho": 0.9, "mode": "conditional"}'
 
 env:
   TMUX_SESSION_NAME: "train"
