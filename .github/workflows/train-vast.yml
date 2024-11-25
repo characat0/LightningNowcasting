@@ -138,7 +138,7 @@ jobs:
           export LINES=24
           tmux new-session -d -s $TMUX_SESSION_NAME 'source ~/.bashrc && bash ./scripts/train.sh | tee /tmp/$TMUX_SESSION_NAME.log; trap "rm -f /tmp/$TMUX_SESSION_NAME.log" EXIT'
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
-            (timeout 120m tail -f tee /tmp/$TMUX_SESSION_NAME.log) || echo "Session exited"
+            (timeout 120m tail -f /tmp/$TMUX_SESSION_NAME.log) || echo "Session exited"
           fi
           if tmux has-session -t $TMUX_SESSION_NAME 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
