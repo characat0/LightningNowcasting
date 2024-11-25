@@ -46,8 +46,8 @@ jobs:
     steps:
       - id: hyperparameters
         run: |
-          echo "${{ toJSON(inputs) }}"
-          hyperparameters=$(echo "${{ toJSON(inputs) }}" | jq -cr 'with_entries(select(.key | startswith("hyperparameter_")) | .key |= sub("^hyperparameter_"; ""))')
+          echo '${{ toJSON(inputs) }}'
+          hyperparameters=$(echo '${{ toJSON(inputs) }}' | jq -cr 'with_entries(select(.key | startswith("hyperparameter_")) | .key |= sub("^hyperparameter_"; ""))')
           final_hyperparameters=$(echo "$hyperparameters ${{ inputs.extra_hyperparameters }}" | jq -crs add)
           echo "$final_hyperparameters"
           echo "hyperparameters=$final_hyperparameters" >> "$GITHUB_OUTPUT"
