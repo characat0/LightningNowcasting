@@ -132,7 +132,9 @@ jobs:
         run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
         working-directory: lib/${{ inputs.subpackage }}
       - name: Create TMux session
-        run: tmux new-session -d -s "$TMUX_SESSION_NAME" "./scripts/train.sh &> /tmp/train.log"
+        run: |
+          export RUNNER_TRACKING_ID=''
+          tmux new-session -d -s "$TMUX_SESSION_NAME" "./scripts/train.sh &> /tmp/train.log"
         working-directory: lib/${{ inputs.subpackage }}
         env:
           MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
