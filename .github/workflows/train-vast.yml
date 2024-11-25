@@ -135,11 +135,11 @@ jobs:
         id: train
         run: |
           TEMP_LOG_FILE=/tmp/train.log
-          tmux new-session -s train_session "stdbuf -i0 -o0 -e0 ./scripts/train.sh &> \"$TEMP_LOG_FILE\""
+          tmux new-session -d -s "$TMUX_SESSION_NAME" "stdbuf -i0 -o0 -e0 ./scripts/train.sh &> \"$TEMP_LOG_FILE\""
           tail -f "$TEMP_LOG_FILE" &
           start_time=$(date +%s)
-          time_limit=1200
-          while [[ ! -f ~/FINISHED ]]; do
+          time_limit=1500
+          while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
             current_time=$(date +%s)  # Get current time in seconds since epoch
             elapsed=$((current_time - start_time))
             if (( elapsed >= time_limit )); then
@@ -147,7 +147,7 @@ jobs:
             fi
             sleep 10
           done
-          if [[ ! -f ~/FINISHED ]]; then
+          if tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; then
             echo "finished=false" >> "$GITHUB_OUTPUT"
           else
             echo "finished=true" >> "$GITHUB_OUTPUT"

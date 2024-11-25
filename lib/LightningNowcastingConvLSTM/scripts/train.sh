@@ -1,6 +1,4 @@
 #!/bin/bash
-trap 'touch ~/FINISHED' EXIT
-
 sha256sum -c data/SHA256SUMS
 
 # julia --project=. scripts/create_dataset_from_old.jl
