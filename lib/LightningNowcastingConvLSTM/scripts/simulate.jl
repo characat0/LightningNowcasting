@@ -58,8 +58,8 @@ function logsystemmetrics(run_info)
         metrics[:gpu_power_usage_watts] = get_power_usage()
         metrics[:gpu_power_usage_percentage] = metrics[:gpu_power_usage_watts]/get_power_limit()
         utilization = get_gpu_utilization()
-        metrics[:gpu_utilization_percentage] = utilization.compute
-        metrics[:gpu_utilization_percentage_mem] = utilization.mem
+        metrics[:gpu_utilization_percentage] = utilization.compute / 100.0
+        metrics[:gpu_utilization_percentage_mem] = utilization.mem / 100.0
     catch
     end
 
@@ -255,7 +255,7 @@ function simulate(; kwargs...)
             catch
                 close(t)
             end
-        end, 5; interval=30)
+        end, 60*5; interval=30)
         gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
         if length(gpu_info) > 0
             @show gpu_info
