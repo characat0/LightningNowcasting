@@ -14,13 +14,13 @@ on:
         description: Image to be used
         default: "glcr.b-data.ch/julia/ver:1.10.6"
       hyperparameter_k_h:
-        description: Kernel size for hidden to hidden transition
+        description: Kernel size hidden to hidden
         default: "5"
       hyperparameter_k_x:
-        description: Kernel size for input to hidden transition
+        description: Kernel size input to hidden
         default: "5"
       hyperparameter_hidden:
-        description: Number of hidden channels in each convlstm layer
+        description: "# of hidden channels per layer"
         default: "[64, 32, 32]"
       hyperparameter_seed:
         description: Seed for Xoshiro number generator
@@ -29,19 +29,19 @@ on:
         description: Eta for the Optimiser
         default: "3e-3"
       hyperparameter_rho:
-        description: Rho parameter of the Optimiser (used on RMSProp)
+        description: Rho of the Optimiser (RMSProp)
         default: "0.9"
       hyperparameter_n_steps:
-        description: Number of epochs to run optimization on
+        description: Number of epochs
         default: "20"
       hyperparameter_batchsize:
-        description: Number of sequences to include in a minibatch for training (and validation)
+        description: Minibatch size
         default: "16"
       hyperparameter_use_bias:
-        description: Wether to use or not bias in each convlstm layer
+        description: Bias term per layer
         default: "[true, false, false]"
       hyperparameter_mode:
-        description: Mode for the ConvLSTM encoder-decoder, can be "conditional" or "generative", conditional model uses teaching forcing
+        description: Model configuration ("conditional" or "generative")
         default: "conditional"
       extra_hyperparameters:
         description: Extra hyperparameters in JSON format
