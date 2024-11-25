@@ -205,7 +205,7 @@ function simulate(
     ))
     train_state = Training.TrainState(model, ps, st, opt)
     @info "Starting train"
-    dt = logging ? 10*60.0 : 1.0
+    dt = logging ? 5*60.0 : 1.0
     for epoch in 1:n_steps
         losses = Float32[]
         progress = Progress(length(train_loader); dt=dt, desc="Training Epoch $(epoch)", barlen=32)

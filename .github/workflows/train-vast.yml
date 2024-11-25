@@ -131,14 +131,22 @@ jobs:
       - name: Install Packages
         run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
         working-directory: lib/${{ inputs.subpackage }}
-      - name: Train
+      - name: Create TMux session
+        run: tmux new-session -d -s "$TMUX_SESSION_NAME" "./scripts/train.sh &> /tmp/train.log"
+        working-directory: lib/${{ inputs.subpackage }}
+        env:
+          MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
+          MLFLOW_TRACKING_USERNAME: lightning
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
+          REPOSITORY_URL: https://github.com/${{ github.repository }}.git
+          GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
+          TRAIN_HYPERPARAMETERS: ${{ needs.hyperparameters.outputs.hyperparameters }}
+      - name: Wait and log
         id: train
         run: |
-          TEMP_LOG_FILE=/tmp/train.log
-          tmux new-session -d -s "$TMUX_SESSION_NAME" "stdbuf -i0 -o0 -e0 ./scripts/train.sh &> \"$TEMP_LOG_FILE\""
           tail -f "$TEMP_LOG_FILE" &
           start_time=$(date +%s)
-          time_limit=1500
+          time_limit=1200
           while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
             current_time=$(date +%s)  # Get current time in seconds since epoch
             elapsed=$((current_time - start_time))
@@ -152,14 +160,6 @@ jobs:
           else
             echo "finished=true" >> "$GITHUB_OUTPUT"
           fi
-        working-directory: lib/${{ inputs.subpackage }}
-        env:
-          MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
-          MLFLOW_TRACKING_USERNAME: lightning
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_PASSWORD }}
-          REPOSITORY_URL: https://github.com/${{ github.repository }}.git
-          GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
-          TRAIN_HYPERPARAMETERS: ${{ needs.hyperparameters.outputs.hyperparameters }}
   cleanup:
     runs-on: [self-hosted, persistent]
     needs: [create_instance, train]
