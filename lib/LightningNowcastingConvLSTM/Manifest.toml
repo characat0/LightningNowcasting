@@ -355,7 +355,7 @@ version = "0.6.3"
 
 [[deps.ConvLSTM]]
 deps = ["Lux", "Random"]
-git-tree-sha1 = "61aedb424e6c84a75ad2002fb0f317da79862e94"
+git-tree-sha1 = "e370789008c0374e308f925789f8a6d17f676a69"
 repo-rev = "main"
 repo-url = "https://github.com/characat0/ConvLSTM.jl"
 uuid = "cc441fe5-8cc4-4841-90c4-26eb7180d202"
