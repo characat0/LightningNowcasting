@@ -56,7 +56,7 @@ N_X = 10
 
 @info "Applying gaussian filters"
 
-dataset_x = apply_gaussian_filter(train, 2)
+dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], 2)
 dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], .9)
 
 dataset_x = augment(Xoshiro(42), dataset_x, 2_000)

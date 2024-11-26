@@ -118,6 +118,7 @@ jobs:
   train:
     runs-on: [self-hosted, gpu]
     needs: [create_instance, hyperparameters]
+    timeout-minutes: 1440 # 1 day
     outputs:
       finished: ${{ steps.train.outputs.finished }}
     steps:
@@ -133,10 +134,8 @@ jobs:
       - name: Install Packages
         run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
         working-directory: lib/${{ inputs.subpackage }}
-      - name: Create TMux session
-        run: |
-          export RUNNER_TRACKING_ID=''
-          tmux new-session -d -s "$TMUX_SESSION_NAME" "./scripts/train.sh &> /tmp/train.log"
+      - name: Run Training
+        run: ./scripts/train.sh
         working-directory: lib/${{ inputs.subpackage }}
         env:
           MLFLOW_TRACKING_URI: http://mlflow.marcovela.com:6969/api
@@ -145,30 +144,9 @@ jobs:
           REPOSITORY_URL: https://github.com/${{ github.repository }}.git
           GPU_INFO: ${{ needs.create_instance.outputs.gpu_info }}
           TRAIN_HYPERPARAMETERS: ${{ needs.hyperparameters.outputs.hyperparameters }}
-      - name: Wait and log
-        id: train
-        run: |
-          tail -f /tmp/train.log &
-          start_time=$(date +%s)
-          time_limit=7200
-          while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
-            current_time=$(date +%s)  # Get current time in seconds since epoch
-            elapsed=$((current_time - start_time))
-            if (( elapsed >= time_limit )); then
-              break
-            fi
-            sleep 10
-          done
-          if tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; then
-            echo "finished=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "finished=true" >> "$GITHUB_OUTPUT"
-          fi
   cleanup:
     runs-on: [self-hosted, persistent]
     needs: [create_instance, train]
-    environment: 
-      name: ${{ needs.train.outputs.finished == 'false' && 'killer' || 'quick_shot' }}
     if: always()
     steps:
       - uses: actions/setup-python@v5

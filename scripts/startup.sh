@@ -27,11 +27,6 @@ sudo apt-get install -y curl tar wget coreutils git tree python3-pip
 
 pip install vastai
 
-if [ -z "$TMUX_SESSION_NAME" ]; then
-  echo "Error: TMUX_SESSION_NAME is not set in the environment."
-  exit 1
-fi
-
 # Remove tmux
 touch ~/.no_auto_tmux;
 if [ -n "$TMUX" ]; then
@@ -72,11 +67,6 @@ touch ~/READY
 
 # Setup the runner package
 RUNNER_ALLOW_RUNASROOT=1 ./run.sh
-
-while tmux has-session -t "$TMUX_SESSION_NAME" 2>/dev/null; do
-  sleep 10m  # Wait for 10 minutes before checking again
-  echo "$(date) - Running..."
-done
 
 echo "Command has finished."
 
