@@ -189,6 +189,7 @@ function simulate(
     ps, st = Lux.setup(rng, model) |> dev
     opt = RMSProp(; eta, rho)
     logparam(mlf, run_info, Dict(
+        "model.mode" => mode,
         "model.depth" => length(hidden),
         "model.kernel_hidden" => k_h,
         "model.kernel_input" => k_x,
