@@ -222,7 +222,7 @@ function simulate(
         metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
 
-        if ((epoch - 1) % 4 == 0) || (epoch == n_steps) 
+        if ((epoch - 1) % 3 == 0) || (epoch == n_steps) 
             ps_trained, st_trained = (train_state.parameters, train_state.states) |> cpu_device()
             @save "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2" ps_trained st_trained
             logartifact(mlf, run_info, "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2")
@@ -253,8 +253,8 @@ function simulate(; kwargs...)
         timer = Timer(t -> begin
             try
                 logsystemmetrics(run_info)
-            catch
-                close(t)
+            catch e
+                @warn e
             end
         end, 60*5; interval=30)
         gpu_info = JSON.parse(get(ENV, "GPU_INFO", "{}"))
