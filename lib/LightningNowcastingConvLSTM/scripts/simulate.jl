@@ -17,6 +17,37 @@ const experiment = getorcreateexperiment(mlf, "lux-lightning-4")
 const lossfn = BinaryCrossEntropyLoss()
 
 
+
+hyperparams = JSON.parse(get(ENV, "TRAIN_HYPERPARAMETERS", "{}"))
+hyperparams = Dict(Symbol(k) => v for (k, v) in hyperparams)
+
+type_converter = [
+    (:mode, Symbol),
+    (:hidden, (Tuple ∘ JSON.parse)),
+    (:use_bias, (Tuple ∘ JSON.parse)),
+    (:k_x, Base.Fix1(parse, Int)),
+    (:k_h, Base.Fix1(parse, Int)),
+    (:seed, Base.Fix1(parse, Int)),
+    (:n_steps, Base.Fix1(parse, Int)),
+    (:batchsize, Base.Fix1(parse, Int)),
+    (:eta, Base.Fix1(parse, Float64)),
+    (:rho, Base.Fix1(parse, Float64)),
+]
+
+@info "Raw Hyperparameters" hyperparams
+
+for (k, f) in type_converter
+    try
+        hyperparams[k] = f(hyperparams[k])
+    catch e
+        @warn e
+    end
+end
+
+
+@info "Parsed Hyperparameters" hyperparams
+
+
 function get_temperature(device::CUDA.NVML.Device=first(CUDA.NVML.devices()))
     temp = Ref{UInt32}()
     NVML.nvmlDeviceGetTemperature(device, CUDA.NVML.NVML_TEMPERATURE_GPU, temp)
@@ -241,7 +272,7 @@ function simulate(; kwargs...)
         Dict("key" => "mlflow.source.name", "value" => get(ENV, "REPOSITORY_URL", "https://github.com/characat0/LightningNowcasting.git")),
         Dict("key" => "mlflow.source.type", "value" => "git"),
         Dict("key" => "mlflow.source.branch", "value" => "main"),
-        Dict("key" => "mlflow.note.content", "value" => "Commit message: $(string(d[:gitmessage]))"),
+        Dict("key" => "mlflow.note.content", "value" => "Commit message: $(string(d[:gitmessage])) \nHyperparameters:\n$(get(ENV, "TRAIN_HYPERPARAMETERS", "{}"))"),
         Dict("key" => "is_dirty", "value" => string(endswith(d[:gitcommit], "-dirty"))),
     ]
     run_info = createrun(mlf, experiment; tags=tags)
@@ -286,49 +317,7 @@ function simulate(; kwargs...)
 
 end
 
-h = 64
-eta = 3e-3
-b = (false, true, true)
 
-hyperparams = JSON.parse(get(ENV, "TRAIN_HYPERPARAMETERS", "{}"))
-hyperparams = Dict(Symbol(k) => v for (k, v) in hyperparams)
-
-# list
-# k_x
-# k_h
-# hidden
-# seed
-# eta
-# rho
-# n_steps
-# batchsize
-# mode
-
-type_converter = [
-    (:mode, Symbol),
-    (:hidden, (Tuple ∘ JSON.parse)),
-    (:use_bias, (Tuple ∘ JSON.parse)),
-    (:k_x, Base.Fix1(parse, Int)),
-    (:k_h, Base.Fix1(parse, Int)),
-    (:seed, Base.Fix1(parse, Int)),
-    (:n_steps, Base.Fix1(parse, Int)),
-    (:batchsize, Base.Fix1(parse, Int)),
-    (:eta, Base.Fix1(parse, Float64)),
-    (:rho, Base.Fix1(parse, Float64)),
-]
-
-@info "Raw Hyperparameters" hyperparams
-
-for (k, f) in type_converter
-    try
-        hyperparams[k] = f(hyperparams[k])
-    catch e
-        @warn e
-    end
-end
-
-
-@info "Parsed Hyperparameters" hyperparams
 
 
 simulate(;
