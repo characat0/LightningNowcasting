@@ -186,6 +186,7 @@ function simulate(
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
     rng = Xoshiro(seed)
+    d_rng = Dict(["rng.$(k)" => v for (k, v) in struct_to_dict(rng)])
     ps, st = Lux.setup(rng, model) |> dev
     opt = RMSProp(; eta, rho)
     logparam(mlf, run_info, Dict(
@@ -200,7 +201,7 @@ function simulate(
         "rng.algo" => string(typeof(rng)),
         "rng.seed" => seed,
         "loss.algo" => string(typeof(lossfn)),
-        Dict(["rng.$(k)" => v for (k, v) in struct_to_dict(rng)])...,
+        d_rng...,
         "opt.algo" => string(typeof(opt)),
         Dict(["opt.$(k)" => v for (k, v) in struct_to_dict(opt)])...
     ))
