@@ -1,15 +1,24 @@
-using ProgressMeter, Dates, Unitful, Lux
 using Dates
 using Unitful
 using ConvLSTM
+using ConvLSTM.Lux
+using ArgParse
+using ClimateBase
+using JLD2
+using Random
 
 include("../src/gdal.jl")
-
+include("../src/flashrecords.jl")
+include("../src/dataset.jl")
 
 s = ArgParseSettings()
 @add_arg_table s begin
-  "--model"
-    help = "Model path"
+  "--model_config"
+    help = "Model config path"
+    required = true
+
+  "--model_weights"
+    help = "Model weights path"
     required = true
 
   "--input_dir"
@@ -26,16 +35,20 @@ s = ArgParseSettings()
     default = string(now(UTC))
 end
 
-
-
-
-
-# Fix for Upsample layers not accepting SubArray, instead of view we use 
-# getindex
-function Flux.eachlastdim(A::AbstractArray{T,N}) where {T,N}
-  inds_before = ntuple(_ -> :, N-1)
-  return (getindex(A, inds_before..., i) for i in axes(A, N))
-end
+# function Lux.init_rnn_hidden_state(
+#   rng::AbstractRNG,
+#   lstm::ConvLSTMCell,
+#   x::AbstractArray,
+# )
+#   # TODO: Once we support moving `rng` to the device, we can directly initialize on the
+#   #       device
+#   N = ndims(x)
+#   input_size = ntuple(i -> size(x, i), N - 2)
+#   hidden_size =
+#       calc_out_dims(input_size, lstm.Wx.pad, lstm.Wx.kernel_size, lstm.Wx.stride)
+#   channels = lstm.Wh.in_chs
+#   lstm.init_state(rng, hidden_size..., channels, size(x, N)) |> Lux.get_device(x)
+# end
 
 
 function togoesdate(t)
@@ -102,8 +115,8 @@ end
 
 
 function main(args)
-  @load args[:model] model
-  @load args[:ps] ps_trained st_trained
+  @load args[:model_config] model
+  @load args[:model_weights] ps_trained st_trained
   st = Lux.testmode(st_trained)
   ps = ps_trained
 
@@ -122,15 +135,18 @@ function main(args)
   @assert length(flashes) > 0 "No data to process"
   climarr = generate_climarray(flashes, spatial_resolution, temporal_resolution)
 
-  pred = model(climarr.data, ps, st) # WH1T1
-  @assert size(pred, 3) == 1 "3rd dimension should be 1"
-  @assert size(pred, 5) == 1 "5th dimension should be 1"
-  future_steps = size(pred, 4)
+  X = reshape(climarr.data, size(climarr.data, 1), size(climarr.data, 2), 1, size(climarr.data, 3), 1)
+  @show typeof(X)
+  @show size(X)
+
+  @time "Predicting" pred, _ = model(X, ps, st) # WHT1
+  @assert size(pred, 4) == 1 "4th dimension should be 1"
+  future_steps = size(pred, 3)
 
   time = dims(climarr, Ti)[end]+temporal_resolution:temporal_resolution:dims(climarr, Ti)[end]+temporal_resolution*future_steps
 
   for (i, t) in enumerate(time)
-    result = ClimArray(view(pred, :, :, 1, i, 1), (dims(climarr, Lon), dims(climarr, Lat)), "probability of flash")
+    result = ClimArray(view(pred, :, :, i, 1), (dims(climarr, Lon), dims(climarr, Lat)), "probability of flash")
     out_file = joinpath(output_folder, "GLM-PREDICTED-$(togoesdate(t)).tif")
     save_tiff_uint8(out_file, result)
   end
