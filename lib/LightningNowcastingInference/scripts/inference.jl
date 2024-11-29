@@ -1,15 +1,9 @@
-using ProgressMeter, Dates, Unitful, Lux, GDAL
+using ProgressMeter, Dates, Unitful, Lux
 using Dates
 using Unitful
-@time using Flux
-@time using GDAL_jll
-@time using ArgParse
+using ConvLSTM
 
-
-@time include("../src/dataset.jl")
-@time include("../src/utils.jl")
-@time include("../src/model.jl")
-
+include("../src/gdal.jl")
 
 
 s = ArgParseSettings()
@@ -27,11 +21,6 @@ s = ArgParseSettings()
     range_tester = isdir
     default = "."
 
-  "--stride"
-    help = "Stride for prediction"
-    default = 16
-    arg_type = Int
-  
   "--start_datetime"
     help = "Start time to collect data"
     default = string(now(UTC))
@@ -113,15 +102,17 @@ end
 
 
 function main(args)
-  model = BSON.load(args[:model])[:model]
+  @load args[:model] model
+  @load args[:ps] ps_trained st_trained
+  st = Lux.testmode(st_trained)
+  ps = ps_trained
+
   spatial_resolution = 4u"km"
   temporal_resolution = Minute(15)
   folder = args[:input_dir] # datadir("exp_raw", "22")
   output_folder = args[:output_dir]
 
   model_steps = 10
-  W = 64
-  stride = args[:stride]
 
   start = DateTime(args[:start_datetime], dateformat"YYYY-m-dTH:M:S.s") # DateTime(2023, 6, 1)# now(UTC) - Year(1)
   finish = start - temporal_resolution * model_steps # DateTime(2023, 5, 31)# start - temporal_resolution * model_steps
@@ -131,34 +122,17 @@ function main(args)
   @assert length(flashes) > 0 "No data to process"
   climarr = generate_climarray(flashes, spatial_resolution, temporal_resolution)
 
-  input_array = Flux.pad_zeros(climarr.data, (W ÷ 2, W ÷ 2, 0))
-  m, n, _ = size(input_array)
+  pred = model(climarr.data, ps, st) # WH1T1
+  @assert size(pred, 3) == 1 "3rd dimension should be 1"
+  @assert size(pred, 5) == 1 "5th dimension should be 1"
+  future_steps = size(pred, 4)
 
-  pred = zeros(Float32, m, n, model_steps)
-  counts = zeros(Float32, m, n)
+  time = dims(climarr, Ti)[end]+temporal_resolution:temporal_resolution:dims(climarr, Ti)[end]+temporal_resolution*future_steps
 
-  @showprogress for (i, j) in Base.Iterators.product(1:stride:m-W, 1:stride:n-W)
-    Flux.reset!(model)
-    pred[i:i+W-1, j:j+W-1, :] += reshape(
-      model(
-        reshape(input_array[i:i+W-1, j:j+W-1, :], W, W, 1, 1, :)
-      ),
-      W, W, :,
-    )
-    counts[i:i+W-1, j:j+W-1, :] .+= 1
-  end
-  pred = (pred ./ counts)[W÷2+1:end-W÷2, W÷2+1:end-W÷2, :]
-  time = dims(climarr, Ti)[end]+temporal_resolution:temporal_resolution:dims(climarr, Ti)[end]+temporal_resolution*model_steps
-
-  pred_uint = floor.(UInt8, pred * (2^8-1))
   for (i, t) in enumerate(time)
-    result = ClimArray(pred_uint[:, :, i], (dims(climarr, Lon), dims(climarr, Lat)), "probability of flash")
-    tf = tempname() * ".nc"
-    ncwrite(tf, result)
+    result = ClimArray(view(pred, :, :, 1, i, 1), (dims(climarr, Lon), dims(climarr, Lat)), "probability of flash")
     out_file = joinpath(output_folder, "GLM-PREDICTED-$(togoesdate(t)).tif")
-    GDAL_jll.gdal_translate_exe() do exe
-      run(`$exe -ot Byte $tf $out_file`)
-    end
+    save_tiff_uint8(out_file, result)
   end
 
 end
