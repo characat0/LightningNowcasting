@@ -99,39 +99,13 @@ function logsystemmetrics(run_info)
 end
 
 
-struct MappedArray{T, N, F}
-    arr::AbstractArray{T, N}
-    f::F
-end
-
-MLUtils.numobs(arr::MappedArray) = MLUtils.numobs(arr.arr)
-MLUtils.getobs(data::MappedArray{T, N}, idx) where {T, N} = data.f(selectdim(data.arr, N, idx))
-
-function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
-    K = ntuple(Returns(0), N - 2)
-    k = T.(Kernel.gaussian((sigma, sigma, K...)))
-    f = Base.Fix2(imfilter, k)
-    MappedArray(ds, f)
-end
-
-function apply_bilinearfilter(ds::AbstractArray{T, N}) where {T, N}
-    K = ntuple(Returns(1), N - 2)
-    k_org = reshape([1 2 1; 2 4 2; 1 2 1], (3, 3, K...))
-    k = centered(k_org / T(sum(k_org)))
-    f = Base.Fix2(imfilter, k)
-    MappedArray(ds, f)
-end
-
-
-function get_dataloaders(batchsize, n_train)
+function get_dataloaders(batchsize, mode)
     @load datadir("exp_pro", "train.jld2") dataset_x dataset_y
     @info "Loaded training set"
     train_x = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
     y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
-    y_train = apply_gaussian_filter(y_train, 1);
-    x_train = apply_bilinearfilter(x_train);
     @load datadir("exp_pro", "val.jld2") dataset
     @info "Loaded validation set"
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
