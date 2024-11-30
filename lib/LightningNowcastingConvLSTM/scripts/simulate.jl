@@ -104,11 +104,12 @@ function get_dataloaders(batchsize, mode)
     @info "Loaded training set"
     train_x = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
     y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
+    if mode == :conditional_teaching
+      train_x = cat(train_x, y_train; dims=Val(3))
+    end
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
-    if mode == :conditional_teaching
-      train_x = cat(train_x, train_y; dims=Val(3))
-    end
+    
     @load datadir("exp_pro", "val.jld2") dataset
     @info "Loaded validation set"
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
