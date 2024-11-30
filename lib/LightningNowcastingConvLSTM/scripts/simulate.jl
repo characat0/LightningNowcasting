@@ -106,6 +106,9 @@ function get_dataloaders(batchsize, mode)
     y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
+    if mode == :conditional_teaching
+      train_x = cat(train_x, train_y; dims=Val(3))
+    end
     @load datadir("exp_pro", "val.jld2") dataset
     @info "Loaded validation set"
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
@@ -185,7 +188,7 @@ function simulate(
     STEPS_X = 10
     STEPS_Y = 10
     n_train = mode == :conditional ? STEPS_X + STEPS_Y : STEPS_X
-    train_loader, val_loader = get_dataloaders(batchsize, n_train) |> dev
+    train_loader, val_loader = get_dataloaders(batchsize, mode) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
     model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 1)
     @save "$(tmp_location)/model_config.jld2" model
