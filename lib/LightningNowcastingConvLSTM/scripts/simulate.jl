@@ -105,7 +105,8 @@ function get_dataloaders(batchsize, mode)
     train_x = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
     y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
     if mode == :conditional_teaching
-      train_x = cat(train_x, y_train; dims=Val(3))
+        @info "Conditional teaching enabled"
+        train_x = cat(train_x, y_train; dims=Val(3))
     end
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
@@ -116,6 +117,7 @@ function get_dataloaders(batchsize, mode)
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(val)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
 
     @show size(x_train)
+    @show size(x_val)
     return (
         DataLoader((x_train, y_train); batchsize),
         DataLoader((x_val, y_val); batchsize),
@@ -187,12 +189,10 @@ function simulate(
 )
     @show tmp_location
     dev = gpu_device(device_id, force_gpu_usage=true)
-    STEPS_X = 10
     STEPS_Y = 10
-    n_train = mode == :conditional ? STEPS_X + STEPS_Y : STEPS_X
     train_loader, val_loader = get_dataloaders(batchsize, mode) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
-    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 1)
+    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, mode, use_bias, peephole, σ, 1)
     @show typeof(model)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
