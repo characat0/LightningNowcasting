@@ -115,6 +115,7 @@ function get_dataloaders(batchsize, mode)
     val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
     (x_val, y_val) = reshape(val[:, :, 1:10, :], size(val)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
 
+    @show size(x_train)
     return (
         DataLoader((x_train, y_train); batchsize),
         DataLoader((x_val, y_val); batchsize),
@@ -192,6 +193,7 @@ function simulate(
     train_loader, val_loader = get_dataloaders(batchsize, mode) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
     model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_X, mode, use_bias, peephole, σ, 1)
+    @show typeof(model)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
     rng = Xoshiro(seed)
