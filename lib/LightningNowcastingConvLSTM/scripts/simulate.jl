@@ -230,11 +230,12 @@ function simulate(
             push!(losses, loss)
             next!(progress; showvalues = [("loss", loss)])
         end
-        logmetric(mlf, run_info, "loss_train", mean(losses); step=epoch)
+        GC.gc(true)
+        CUDA.reclaim()
         # Validation run
         metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
-
+        GC.gc(true)
         if ((epoch - 1) % 3 == 0) || (epoch == n_steps) 
             ps_trained, st_trained = (train_state.parameters, train_state.states) |> cpu_device()
             @save "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2" ps_trained st_trained
