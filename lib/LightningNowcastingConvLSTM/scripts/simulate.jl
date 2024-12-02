@@ -100,21 +100,22 @@ end
 
 
 function get_dataloaders(batchsize, mode)
-    @load datadir("exp_pro", "train.jld2") dataset_x dataset_y
+    @load datadir("exp_pro", "train.jld2") dataset_x dataset_y dataset_y_teaching
     @info "Loaded training set"
     train_x = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
     y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
     if mode == :conditional_teaching
         @info "Conditional teaching enabled"
-        train_x = cat(train_x, y_train; dims=Val(3))
+        train_x = cat(train_x, dataset_y_teaching; dims=Val(3))
     end
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
     
-    @load datadir("exp_pro", "val.jld2") dataset
+    @load datadir("exp_pro", "val.jld2") dataset_x dataset_y
     @info "Loaded validation set"
-    val = dataset::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_val, y_val) = reshape(val[:, :, 1:10, :], size(val)[1:2]..., 1, 10, :), val[:, :, 11:20, :]
+    x_dataset = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
+    y_dataset = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
+    (x_val, y_val) = reshape(dataset_x, size(x_dataset)[1:2]..., 1, 10, :), dataset_y
 
     @show size(x_train)
     @show size(x_val)
