@@ -56,11 +56,11 @@ function apply_permissive_filter(ds::AbstractArray{T, N}) where {T, N}
     K = ntuple(Returns(1), N - 2)
     k_org = reshape(
         [
-            .25 .25 .25 .25 .25;
-            .25 .50 .50 .50 .25;
-            .25 .50   1 .50 .25;
-            .25 .50 .50 .50 .25;
-            .25 .25 .25 .25 .25;
+            .05 .05 .05 .05 .05;
+            .05 .10 .15 .10 .05;
+            .05 .15   1 .15 .05;
+            .05 .10 .15 .10 .05;
+            .05 .05 .05 .05 .05;
         ],
         (5, 5, K...),
     )
@@ -79,6 +79,7 @@ dataset_y = apply_permissive_filter(train[:, :, N_X+1:end, :])
 
 dataset_x = augment(Xoshiro(42), dataset_x, 2_000)
 dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
+dataset_y_teaching = augment(Xoshiro(42), dataset_y_teaching, 2_000)
 
 
 @info "number of samples for train: $(size(dataset_x, 4))"
