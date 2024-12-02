@@ -21,7 +21,7 @@ function uint8_filter(chunk, k)
     chunk = chunk / Float32(255)
     res = imfilter(chunk, k)
     res .= max.(chunk, res)
-    floor.(UInt8, res * Float32(255))
+    floor.(UInt8, min.(res * Float32(255), 255.f0))
 end
 
 function augment(rng, ds, n_empty=0)
@@ -43,7 +43,7 @@ function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
     # MappedArray(ds, f)
 end
 
-function apply_bilinearfilter(ds::AbstractArray{T, N}) where {T, N}
+function apply_bilinear_filter(ds::AbstractArray{T, N}) where {T, N}
     K = ntuple(Returns(1), N - 2)
     k_org = reshape([1 2 1; 2 4 2; 1 2 1], (3, 3, K...))
     k = centered(k_org / Float32(sum(k_org)))
@@ -52,12 +52,30 @@ function apply_bilinearfilter(ds::AbstractArray{T, N}) where {T, N}
     # MappedArray(ds, f)
 end
 
+function apply_permissive_filter(ds::AbstractArray{T, N}) where {T, N}
+    K = ntuple(Returns(1), N - 2)
+    k_org = reshape(
+        [
+            .25 .25 .25 .25 .25;
+            .25 .50 .50 .50 .25;
+            .25 .50   1 .50 .25;
+            .25 .50 .50 .50 .25;
+            .25 .25 .25 .25 .25;
+        ],
+        (5, 5, K...),
+    )
+    k = centered(Float32.(k_org))
+    f = Base.Fix2(uint8_filter, k)
+    f(ds)
+end
+
 N_X = 10
 
 @info "Applying gaussian filters"
 
 dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], 2)
-dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], .9)
+dataset_y_teaching = apply_gaussian_filter(train[:, :, N_X+1:end, :], 2)
+dataset_y = apply_permissive_filter(train[:, :, N_X+1:end, :])
 
 dataset_x = augment(Xoshiro(42), dataset_x, 2_000)
 dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
@@ -65,11 +83,13 @@ dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
 
 @info "number of samples for train: $(size(dataset_x, 4))"
 
-@save datadir("exp_pro", "train.jld2") {compress=true} dataset_x dataset_y lat lon time
+@save datadir("exp_pro", "train.jld2") {compress=true} dataset_x dataset_y_teaching dataset_y lat lon time
 
 dataset = augment(Xoshiro(42), val, 200)
+dataset_x = dataset[:, :, begin:N_X, :]
+dataset_y = dataset[:, :, N_X+1:end, :]
 
 @info "number of samples for validation: $(size(dataset, 4))"
 
-@save datadir("exp_pro", "val.jld2") {compress=true} dataset lat lon time
+@save datadir("exp_pro", "val.jld2") {compress=true} dataset dataset_x dataset_y lat lon time
 
