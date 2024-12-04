@@ -107,7 +107,7 @@ function get_dataloaders(batchsize, mode)
     if mode == :conditional_teaching
         @info "Conditional teaching enabled"
         dataset_teaching = dataset_y_teaching::Array{UInt8, 4} / Float32(typemax(UInt8))
-        train_x = cat(train_x, dataset_teaching; dims=Val(3))
+        train_x = cat(train_x, dataset_teaching; dims=Val(3))::Array{Float32, 4}
     end
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
@@ -116,7 +116,7 @@ function get_dataloaders(batchsize, mode)
     @info "Loaded validation set"
     x_dataset = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
     y_dataset = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_val, y_val) = reshape(dataset_x, size(x_dataset)[1:2]..., 1, 10, :), dataset_y
+    (x_val, y_val) = reshape(dataset_x, size(x_dataset)[1:2]..., 1, 10, :), y_dataset
 
     @show size(x_train)
     @show size(x_val)
