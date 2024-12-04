@@ -106,7 +106,8 @@ function get_dataloaders(batchsize, mode)
     y_train = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
     if mode == :conditional_teaching
         @info "Conditional teaching enabled"
-        train_x = cat(train_x, dataset_y_teaching; dims=Val(3))
+        dataset_teaching = dataset_y_teaching::Array{UInt8, 4} / Float32(typemax(UInt8))
+        train_x = cat(train_x, dataset_teaching; dims=Val(3))
     end
     x_train = reshape(train_x, size(train_x)[1:2]..., 1, size(train_x, 3), :)
     @info "Splitted between x and y"
