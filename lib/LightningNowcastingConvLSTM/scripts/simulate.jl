@@ -228,6 +228,9 @@ function simulate(
             (_, loss, _, train_state) = Training.single_train_step!(
                 AutoZygote(), lossfn, (x, y), train_state
             )
+            if isnan(loss)
+                error("NaN found in epoch $(epoch)")
+            end
             push!(losses, loss)
             next!(progress; showvalues = [("loss", loss)])
         end
