@@ -116,7 +116,7 @@ function get_dataloaders(batchsize, mode)
     @info "Loaded validation set"
     x_dataset = dataset_x::Array{UInt8, 4} / Float32(typemax(UInt8))
     y_dataset = dataset_y::Array{UInt8, 4} / Float32(typemax(UInt8))
-    (x_val, y_val) = reshape(dataset_x, size(x_dataset)[1:2]..., 1, 10, :), y_dataset
+    (x_val, y_val) = reshape(x_dataset, size(x_dataset)[1:2]..., 1, 10, :), y_dataset
 
     @show size(x_train)
     @show size(x_val)
