@@ -14,7 +14,7 @@ on:
         default: "RTX_3090"
       image_name:
         description: Image to be used
-        default: "glcr.b-data.ch/julia/ver:1.10.6"
+        default: "glcr.b-data.ch/julia/ver:1.10.7"
       hyperparameter_k_h:
         description: Kernel size hidden to hidden
         default: "5"
