@@ -188,13 +188,14 @@ function simulate(
     seed,
     tmp_location = mktempdir(),
     n_steps=30,
+    dropout_p,
 )
     @show tmp_location
     dev = gpu_device(device_id, force_gpu_usage=true)
     STEPS_Y = 10
     train_loader, val_loader = get_dataloaders(batchsize, mode) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
-    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, mode, use_bias, peephole, σ, 1)
+    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, mode, use_bias, peephole, σ, 1, dropout_p)
     @show typeof(model)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
