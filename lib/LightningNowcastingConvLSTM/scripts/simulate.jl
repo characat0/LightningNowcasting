@@ -203,7 +203,7 @@ function simulate(
     rng = Xoshiro(seed)
     d_rng = Dict(["rng.$(k)" => v for (k, v) in struct_to_dict(rng)])
     ps, st = Lux.setup(rng, model) |> dev
-    opt = RMSProp(; eta, rho)
+    opt = OptimiserChain(ClipNorm(), RMSProp(; eta, rho))
     logparam(mlf, run_info, Dict(
         "model.mode" => mode,
         "model.depth" => length(hidden),
