@@ -195,7 +195,8 @@ function simulate(
     STEPS_Y = 10
     train_loader, val_loader = get_dataloaders(batchsize, mode) |> dev
     peephole = ntuple(Returns(true), length(use_bias))
-    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, mode, use_bias, peephole, σ, 1, dropout_p)
+    activation = leakyrelu
+    model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, mode, use_bias, peephole, activation, 1, dropout_p)
     @show typeof(model)
     @save "$(tmp_location)/model_config.jld2" model
     logartifact(mlf, run_info, "$(tmp_location)/model_config.jld2")
@@ -212,6 +213,7 @@ function simulate(
         "model.batchsize" => batchsize,
         "model.use_bias" => use_bias,
         "model.peephole" => peephole,
+        "model.activation" => string(activation),
         "rng.algo" => string(typeof(rng)),
         "rng.seed" => seed,
         "loss.algo" => string(typeof(lossfn)),
