@@ -75,7 +75,7 @@ N_X = 10
 
 dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], 2)
 dataset_y_teaching = apply_gaussian_filter(train[:, :, N_X+1:end, :], 2)
-dataset_y = apply_permissive_filter(train[:, :, N_X+1:end, :])
+dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], 2)
 
 dataset_x = augment(Xoshiro(42), dataset_x, 2_000)
 dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
