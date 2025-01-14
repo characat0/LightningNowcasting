@@ -98,12 +98,13 @@ jobs:
           ENV_GITHUB_ACTIONS_TOKEN: ${{ env.runner_token }}
           ENV_GITHUB_REPOSITORY: ${{ github.repository }}
           ENV_TMUX_SESSION_NAME: ${{ env.TMUX_SESSION_NAME }}
-      - name: Copy Data
+      - name: Upload Data
         id: data
-        run: |
-          tar -czf data.tar.gz -C ./lib/${{ inputs.subpackage }} data
-          key=$(curl -F "file=@data.tar.gz" https://file.io | jq -r .key)
-          echo "data_url=https://file.io/$key" >> "$GITHUB_OUTPUT"
+        uses: actions/upload-artifact@v4
+        with:
+          name: data
+          path: ./lib/${{ inputs.subpackage }}
+          compression-level: 9
       - name: Wait until ready
         id: wait
         run: python scripts/train.py WAIT_INSTANCE
@@ -123,14 +124,17 @@ jobs:
       finished: ${{ steps.train.outputs.finished }}
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare (Download data and instantiate Julia)
-        run: |
-          curl -o data.tar.gz ${{ needs.create_instance.outputs.data_url }} &
-          (cd lib/${{ inputs.subpackage }} && julia --project=. -e 'import Pkg; Pkg.instantiate()') &
-          wait
-          tar -xzf data.tar.gz
-          cp  --no-clobber -r ./data/* lib/${{ inputs.subpackage }}/data
-          tree -hau -L 4 lib/${{ inputs.subpackage }}/data
+      - name: Download data
+        uses: actions/download-artifact@v4
+        with: 
+          name: data
+          path: lib/${{ inputs.subpackage }}/data
+      - name: Delete artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: data
+      - name: Check folders
+        run: tree -hau -L 4 lib/${{ inputs.subpackage }}/data
       - name: Install Packages
         run: julia --project=. -e 'import Pkg; Pkg.instantiate()'
         working-directory: lib/${{ inputs.subpackage }}
