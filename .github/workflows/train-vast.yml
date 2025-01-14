@@ -104,7 +104,7 @@ jobs:
         with:
           name: data
           path: ./lib/${{ inputs.subpackage }}
-          compression-level: 9
+          compression-level: 0
       - name: Wait until ready
         id: wait
         run: python scripts/train.py WAIT_INSTANCE
