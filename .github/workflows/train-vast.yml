@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: data
-          path: ./lib/${{ inputs.subpackage }}
+          path: ./lib/${{ inputs.subpackage }}/data
           compression-level: 0
       - name: Wait until ready
         id: wait
@@ -128,7 +128,7 @@ jobs:
         uses: actions/download-artifact@v4
         with: 
           name: data
-          path: lib/${{ inputs.subpackage }}
+          path: lib/${{ inputs.subpackage }}/data
       - name: Delete artifact
         uses: geekyeggo/delete-artifact@v5
         with:
