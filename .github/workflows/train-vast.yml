@@ -133,6 +133,7 @@ jobs:
         uses: geekyeggo/delete-artifact@v5
         with:
           name: data
+          failOnError: false
       - name: Check folders
         run: tree -hau -L 4 lib/${{ inputs.subpackage }}/data
       - name: Install Packages
@@ -160,3 +161,8 @@ jobs:
         run: |
           pip install vastai==0.2.6
           vastai destroy instance "${{ needs.create_instance.outputs.instance_id }}" --api-key=${{ secrets.VAST_API_KEY }}
+      - name: Delete artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: data
+          failOnError: false
