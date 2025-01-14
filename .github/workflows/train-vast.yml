@@ -118,7 +118,7 @@ jobs:
   train:
     runs-on: [self-hosted, gpu]
     needs: [create_instance, hyperparameters]
-    timeout-minutes: 1440 # 1 day
+    timeout-minutes: 2160 # 1.5 days
     outputs:
       finished: ${{ steps.train.outputs.finished }}
     steps:
