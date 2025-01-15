@@ -38,6 +38,7 @@ end
 function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
     K = ntuple(Returns(0), N - 2)
     k = Float32.(Kernel.gaussian((sigma, sigma, K...)))
+    k ./= k[0, 0]
     f = Base.Fix2(uint8_filter, k)
     f(ds)
     # MappedArray(ds, f)
@@ -73,9 +74,9 @@ N_X = 10
 
 @info "Applying gaussian filters"
 
-dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], 2)
+dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], .69)
 dataset_y_teaching = apply_gaussian_filter(train[:, :, N_X+1:end, :], 2)
-dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], 2)
+dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], .69)
 
 dataset_x = augment(Xoshiro(42), dataset_x, 2_000)
 dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
