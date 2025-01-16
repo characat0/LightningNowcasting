@@ -77,7 +77,7 @@ jobs:
           then
             python scripts/train.py LAUNCH_INSTANCE
           else
-            echo "instance_id=${{ inputs.instance_id }}" >> $GITHUB_ENV
+            echo "instance_id=${{ inputs.instance_id }}" >> $GITHUB_OUTPUT
           fi
         env:
           VAST_GPU_NAME: ${{ inputs.gpu_name }}
