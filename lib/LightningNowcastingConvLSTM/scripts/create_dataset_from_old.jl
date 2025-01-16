@@ -38,7 +38,7 @@ end
 function apply_gaussian_filter(ds::AbstractArray{T, N}, sigma=.9) where {T, N}
     K = ntuple(Returns(0), N - 2)
     k = Float32.(Kernel.gaussian((sigma, sigma, K...)))
-    k ./= k[0, 0]
+    k ./= (k[0, 0] / .875)
     f = Base.Fix2(uint8_filter, k)
     f(ds)
     # MappedArray(ds, f)
@@ -74,9 +74,9 @@ N_X = 10
 
 @info "Applying gaussian filters"
 
-dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], .69)
-dataset_y_teaching = apply_gaussian_filter(train[:, :, N_X+1:end, :], 2)
-dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], .69)
+dataset_x = apply_gaussian_filter(train[:, :, begin:N_X, :], 1.125)
+dataset_y_teaching = apply_gaussian_filter(train[:, :, N_X+1:end, :], 1.125)
+dataset_y = apply_gaussian_filter(train[:, :, N_X+1:end, :], 1.125)
 
 dataset_x = augment(Xoshiro(42), dataset_x, 2_000)
 dataset_y = augment(Xoshiro(42), dataset_y, 2_000)
@@ -88,7 +88,7 @@ dataset_y_teaching = augment(Xoshiro(42), dataset_y_teaching, 2_000)
 @save datadir("exp_pro", "train.jld2") {compress=true} dataset_x dataset_y_teaching dataset_y lat lon time
 
 dataset = augment(Xoshiro(42), val, 200)
-dataset_x = dataset[:, :, begin:N_X, :]
+dataset_x = apply_gaussian_filter(dataset[:, :, begin:N_X, :], 1.125)
 dataset_y = dataset[:, :, N_X+1:end, :]
 
 @info "number of samples for validation: $(size(dataset, 4))"
