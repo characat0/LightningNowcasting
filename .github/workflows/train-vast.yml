@@ -73,7 +73,7 @@ jobs:
       - name: Launch Instance
         id: launch
         run: |
-          if [[ -z "${{ inputs.instance_id }}"]]
+          if [[ -z "${{ inputs.instance_id }}" ]]
           then
             python scripts/train.py LAUNCH_INSTANCE
           else
