@@ -15,24 +15,11 @@ on:
       image_name:
         description: Image to be used
         default: "glcr.b-data.ch/julia/ver:1.10.7"
-      hyperparameter_k_h:
-        description: Kernel size hidden to hidden
-        default: "5"
-      hyperparameter_k_x:
-        description: Kernel size input to hidden
-        default: "5"
-      hyperparameter_hidden:
-        description: "# of hidden channels per layer"
-        default: "[64, 32, 32]"
-      hyperparameter_eta:
-        description: Eta for the Optimiser
-        default: "3e-3"
+      instance_id:
+        description: Instance ID (empty to create new)
       hyperparameter_batchsize:
         description: Minibatch size
         default: "16"
-      hyperparameter_use_bias:
-        description: Bias term per layer
-        default: "[true, false, false]"
       extra_hyperparameters:
         description: Extra hyperparameters in JSON format
         default: '{"n_steps": 20, "seed": 42, "rho": 0.9, "mode": "conditional"}'
@@ -85,7 +72,13 @@ jobs:
           GH_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
       - name: Launch Instance
         id: launch
-        run: python scripts/train.py LAUNCH_INSTANCE
+        run: |
+          if [[ -z '${{ inputs.instance_id }}']]
+          then
+            python scripts/train.py LAUNCH_INSTANCE
+          else
+            echo "instance_id=${{ inputs.instance_id }}" >> $GITHUB_ENV
+          fi
         env:
           VAST_GPU_NAME: ${{ inputs.gpu_name }}
           VAST_IMAGE: ${{ inputs.image_name }}
