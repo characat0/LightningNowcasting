@@ -225,6 +225,10 @@ function simulate(
     @info "Starting train"
     dt = logging ? 15*60.0 : 1.0
     for epoch in 1:n_steps
+        if (epoch == 3) && (mode == :conditional_teaching)
+            model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, :conditional, use_bias, peephole, activation, 1, dropout_p)
+            train_loader, val_loader = get_dataloaders(batchsize, :conditional) |> dev
+        end
         losses = Float32[]
         progress = Progress(length(train_loader); dt=dt, desc="Training Epoch $(epoch)", barlen=32)
         for (x, y) in train_loader
