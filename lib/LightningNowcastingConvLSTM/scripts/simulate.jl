@@ -137,7 +137,7 @@ function plot_predictions(tmp_location, model, train_state, data, run_info, epoc
             reshape(y[:, :, :, idx], 64, :),
             reshape(x[:, :, 1, :, idx], 64, :),
         ) |> cpu_device()
-        fig = heatmap(data_to_plot, size=(128*10 + 80, 128*3 + 30), clims=(0, 1))
+        fig = heatmap(data_to_plot, size=(100*10 + 80, 100*3 + 30), clims=(0, 1))
         savefig(fig, "$(tmp_location)/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
         logartifact(mlf, run_info, "$(tmp_location)/epoch_$(lpad(epoch, 2, '0'))_$(name)_$(idx)_step.png")
     end
