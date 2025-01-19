@@ -227,6 +227,8 @@ function simulate(
     for epoch in 1:n_steps
         if (epoch == 4) && (mode == :conditional_teaching)
             model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, :conditional, use_bias, peephole, activation, 1, dropout_p)
+            @save "$(tmp_location)/model_config_conditional.jld2" model
+            logartifact(mlf, run_info, "$(tmp_location)/model_config_conditional.jld2")
             train_state = Training.TrainState(model, ps, st, opt)
             train_loader, _ = get_dataloaders(batchsize, :conditional) |> dev
             GC.gc(true)
