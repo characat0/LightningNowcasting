@@ -225,7 +225,7 @@ function simulate(
     @info "Starting train"
     dt = logging ? 15*60.0 : 1.0
     for epoch in 1:n_steps
-        if (epoch == 3) && (mode == :conditional_teaching)
+        if (epoch == 4) && (mode == :conditional_teaching)
             model = SequenceToSequenceConvLSTM((k_x, k_x), (k_h, k_h), 1, hidden, STEPS_Y, :conditional, use_bias, peephole, activation, 1, dropout_p)
             train_state = Training.TrainState(model, ps, st, opt)
             train_loader, _ = get_dataloaders(batchsize, :conditional) |> dev
@@ -249,7 +249,7 @@ function simulate(
         metrics_tests = evaluate(model, train_state, metrics_to_monitor, val_loader, :val)
         logmetrics(mlf, run_info.info.run_id, metrics_tests, step=epoch)
         GC.gc(true)
-        if ((epoch - 1) % 3 == 0) || (epoch == n_steps) 
+        if ((epoch - 1) % 2 == 0) || (epoch == n_steps) 
             ps_trained, st_trained = (train_state.parameters, train_state.states) |> cpu_device()
             @save "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2" ps_trained st_trained
             logartifact(mlf, run_info, "$(tmp_location)/trained_weights_$(lpad(epoch, 2, '0')).jld2")
